@@ -2,7 +2,7 @@
 	<Meta name="ExplicitAutoJoints">true</Meta>
 	<External>null</External>
 	<External>nil</External>
-	<Item class="ModuleScript" referent="RBX5A39B9A017484730897B08A338F28D7E">
+	<Item class="ModuleScript" referent="RBXE7E79F836C7443CCA1431F920AE4F480">
 		<Properties>
 			<Content name="LinkedSource"><null></null></Content>
 			<ProtectedString name="Source"><![CDATA[--[[
@@ -25,7 +25,7 @@
 	Source: https://github.com/JustSomeGuest/Vanta
 
 	Setup:
-	Drag this modulescript into 'ServerScriptService'
+	Drag this ModuleScript into 'ServerScriptService'
 	Optionally change the settings below.
 	
 	!!! DO NOT CHANGE ANYTHING EXCEPT SETTINGS !!!
@@ -83,24 +83,7 @@ local Settings = {
 	},
 
 	-- Prevents abnormal physics from flinging players.
-	AntiFling = {
-		Enabled = true,
-
-		-- Maximum allowed linear velocity of the HumanoidRootPart.
-		MaxVelocity = 100,
-
-		-- Maximum allowed angular velocity of the HumanoidRootPart.
-		MaxAngularVelocity = 100,
-
-		-- Number of violations required before kicking.
-		StrikeLimit = 3,
-
-		-- Minimum time between AntiFling strikes.
-		StrikeCooldown = 5,
-
-		-- How long old strikes remain before decaying.
-		StrikeDecayTime = 30,
-	},
+	AntiFling = true,
 }
 
 -- Modules that support .Whitelist(Player, Duration)
@@ -269,7 +252,7 @@ return setmetatable(Settings, {
 			<int64 name="SourceAssetId">-1</int64>
 			<SharedString name="Tags">yuZpQdnvvUBOTYh1jqZ2cA==</SharedString>
 		</Properties>
-		<Item class="Script" referent="RBX63FDD8A13E014D21AF12C0750865BE1F">
+		<Item class="Script" referent="RBXE3F4AD554E7E496692EF464DFCA7B3FE">
 			<Properties>
 				<ProtectedString name="Source"><![CDATA[local Players = game:GetService("Players")
 local ReplicatedFirst = game:GetService("ReplicatedFirst")
@@ -338,7 +321,7 @@ end)]]></ProtectedString>
 				<SharedString name="Tags">yuZpQdnvvUBOTYh1jqZ2cA==</SharedString>
 			</Properties>
 		</Item>
-		<Item class="Folder" referent="RBXF9D02813223A4971BDA140E55CCA549B">
+		<Item class="Folder" referent="RBXCF93E3E7E9FB46868F095C0913DC76F9">
 			<Properties>
 				<Color3 name="IconTint">
 					<R>0</R>
@@ -352,7 +335,7 @@ end)]]></ProtectedString>
 				<int64 name="SourceAssetId">-1</int64>
 				<SharedString name="Tags">yuZpQdnvvUBOTYh1jqZ2cA==</SharedString>
 			</Properties>
-			<Item class="ModuleScript" referent="RBX510FA5927BDB4A33A4FC7416A97FBE1B">
+			<Item class="ModuleScript" referent="RBXB1C6BD00ECF649148FEF24C4DD611DC2">
 				<Properties>
 					<Content name="LinkedSource"><null></null></Content>
 					<ProtectedString name="Source"><![CDATA[local AntiBackdoor = {}
@@ -500,7 +483,7 @@ return AntiBackdoor]]></ProtectedString>
 					<SharedString name="Tags">yuZpQdnvvUBOTYh1jqZ2cA==</SharedString>
 				</Properties>
 			</Item>
-			<Item class="ModuleScript" referent="RBX1EE7C96AC2E84AF9B8F5666FA1FDDE92">
+			<Item class="ModuleScript" referent="RBXD2A9A70C171C44B7AB86B51D831FF285">
 				<Properties>
 					<Content name="LinkedSource"><null></null></Content>
 					<ProtectedString name="Source"><![CDATA[local AntiDeletion = {}
@@ -675,7 +658,7 @@ return AntiDeletion]]></ProtectedString>
 					<SharedString name="Tags">yuZpQdnvvUBOTYh1jqZ2cA==</SharedString>
 				</Properties>
 			</Item>
-			<Item class="ModuleScript" referent="RBX188276B3990E434CB4912842156BC8DE">
+			<Item class="ModuleScript" referent="RBX650263944D9541DE8FE6362DAFE42547">
 				<Properties>
 					<Content name="LinkedSource"><null></null></Content>
 					<ProtectedString name="Source"><![CDATA[local AntiSpeed = {}
@@ -1021,7 +1004,7 @@ return AntiSpeed]]></ProtectedString>
 					<SharedString name="Tags">yuZpQdnvvUBOTYh1jqZ2cA==</SharedString>
 				</Properties>
 			</Item>
-			<Item class="ModuleScript" referent="RBXD00B9181EEF743308A60EE8751CE31E3">
+			<Item class="ModuleScript" referent="RBXEE145ACB17F14FDDAFB0584D6FA840A7">
 				<Properties>
 					<Content name="LinkedSource"><null></null></Content>
 					<ProtectedString name="Source"><![CDATA[local AntiTeleport = {}
@@ -1271,7 +1254,7 @@ return AntiTeleport]]></ProtectedString>
 					<SharedString name="Tags">yuZpQdnvvUBOTYh1jqZ2cA==</SharedString>
 				</Properties>
 			</Item>
-			<Item class="ModuleScript" referent="RBXA6640C142B8141A99506FAE4A1A4B5F5">
+			<Item class="ModuleScript" referent="RBX6E87377CA3D1480AB08FEB2EB2F06404">
 				<Properties>
 					<Content name="LinkedSource"><null></null></Content>
 					<ProtectedString name="Source"><![CDATA[local AntiNoclip = {}
@@ -1808,7 +1791,7 @@ return AntiNoclip]]></ProtectedString>
 					<SharedString name="Tags">yuZpQdnvvUBOTYh1jqZ2cA==</SharedString>
 				</Properties>
 			</Item>
-			<Item class="ModuleScript" referent="RBX6939A81B58644D9CA80093C1702308B2">
+			<Item class="ModuleScript" referent="RBX6BD48B20CDB742D29F7D89C1CA894FBD">
 				<Properties>
 					<Content name="LinkedSource"><null></null></Content>
 					<ProtectedString name="Source"><![CDATA[local AntiFly = {}
@@ -2108,7 +2091,7 @@ return AntiFly]]></ProtectedString>
 					<SharedString name="Tags">yuZpQdnvvUBOTYh1jqZ2cA==</SharedString>
 				</Properties>
 			</Item>
-			<Item class="ModuleScript" referent="RBX77EEF89F7C1B45EDAD00C0B56FBE5961">
+			<Item class="ModuleScript" referent="RBXA3B73C324251475F9274FF50476F7BE0">
 				<Properties>
 					<Content name="LinkedSource"><null></null></Content>
 					<ProtectedString name="Source"><![CDATA[local Kick = {}
@@ -2217,7 +2200,7 @@ return Kick]]></ProtectedString>
 					<SharedString name="Tags">yuZpQdnvvUBOTYh1jqZ2cA==</SharedString>
 				</Properties>
 			</Item>
-			<Item class="ModuleScript" referent="RBX4FD4C63C30694238A7964DFFF74266B0">
+			<Item class="ModuleScript" referent="RBX2C8D8FB897424A2184C855DF86257A37">
 				<Properties>
 					<Content name="LinkedSource"><null></null></Content>
 					<ProtectedString name="Source"><![CDATA[local Notify = {}
@@ -2304,7 +2287,7 @@ return Notify]]></ProtectedString>
 					<SharedString name="Tags">yuZpQdnvvUBOTYh1jqZ2cA==</SharedString>
 				</Properties>
 			</Item>
-			<Item class="ModuleScript" referent="RBX264F386971D042B3A0BE6564446600CD">
+			<Item class="ModuleScript" referent="RBX159525DC61D64D068E7C2FE91209FD84">
 				<Properties>
 					<Content name="LinkedSource"><null></null></Content>
 					<ProtectedString name="Source"><![CDATA[local AntiFling = {}
@@ -2447,7 +2430,7 @@ return AntiFling]]></ProtectedString>
 				</Properties>
 			</Item>
 		</Item>
-		<Item class="Folder" referent="RBX41F6F54724FB4DAE8E449B717D59494D">
+		<Item class="Folder" referent="RBX8158EAD4C56545BEB7394197D2DF83FC">
 			<Properties>
 				<Color3 name="IconTint">
 					<R>0</R>
@@ -2461,7 +2444,7 @@ return AntiFling]]></ProtectedString>
 				<int64 name="SourceAssetId">-1</int64>
 				<SharedString name="Tags">yuZpQdnvvUBOTYh1jqZ2cA==</SharedString>
 			</Properties>
-			<Item class="LocalScript" referent="RBX1EA34780621843BC8D570467C63D8AE4">
+			<Item class="LocalScript" referent="RBX50B2EC70B9ED44B684E42A41603576FF">
 				<Properties>
 					<ProtectedString name="Source"><![CDATA[if not game:IsLoaded() then
 	game.Loaded:Wait()
@@ -2637,7 +2620,7 @@ end)]]></ProtectedString>
 					<SharedString name="Tags">yuZpQdnvvUBOTYh1jqZ2cA==</SharedString>
 				</Properties>
 			</Item>
-			<Item class="LocalScript" referent="RBXC473A3AD30514A70A0A6AC6E0794F41B">
+			<Item class="LocalScript" referent="RBX37A57F94AAFB4E82A09CC8C8A0C7CDC4">
 				<Properties>
 					<ProtectedString name="Source"><![CDATA[local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
