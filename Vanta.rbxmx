@@ -2630,41 +2630,44 @@ local TextService = game:GetService("TextService")
 local Remote = ReplicatedStorage:WaitForChild("VNT_Notify")
 local PlayerGui = Players.LocalPlayer:WaitForChild("PlayerGui")
 
-local WIDTH = 300
+local WIDTH = 285
 local MARGIN = 16
-local TOP = 12
-local GAP = 8
+local TOP = 14
+local GAP = 7
 local MAX_VISIBLE = 5
-local OFFSCREEN_X = WIDTH + MARGIN + 24
+local OFFSCREEN_X = WIDTH + MARGIN + 20
 
-local PAD = 14
-local TITLE_HEIGHT = 16
-local DIVIDER_GAP = 8
-local LINE_GAP = 12
-local LINE_HEIGHT = 3
+local PAD = 12
+local TITLE_HEIGHT = 15
+local DIVIDER_GAP = 7
+local LINE_GAP = 9
+local LINE_HEIGHT = 2
 
 local BODY_FONT = Enum.Font.GothamMedium
-local BODY_SIZE = 14
+local BODY_SIZE = 13
 
-local Accents = {
-	info = Color3.fromRGB(88, 166, 255),
-	warn = Color3.fromRGB(255, 184, 76),
-	danger = Color3.fromRGB(255, 84, 96),
-}
+local BLUE = Color3.fromRGB(40, 120, 255)
+local BLUE_LIGHT = Color3.fromRGB(85, 155, 255)
+local BLUE_DARK = Color3.fromRGB(30, 75, 150)
 
-local SlideInInfo = TweenInfo.new(0.45, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
-local SlideOutInfo = TweenInfo.new(0.35, Enum.EasingStyle.Quint, Enum.EasingDirection.In)
-local RestackInfo = TweenInfo.new(0.4, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+local CARD_COLOR = Color3.fromRGB(13, 16, 23)
+local CARD_HOVER = Color3.fromRGB(18, 22, 31)
+local BODY_COLOR = Color3.fromRGB(225, 230, 240)
+
+local SlideInInfo = TweenInfo.new(0.42, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+local SlideOutInfo = TweenInfo.new(0.3, Enum.EasingStyle.Quint, Enum.EasingDirection.In)
+local RestackInfo = TweenInfo.new(0.35, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+local HoverInfo = TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
 
 local Gui = Instance.new("ScreenGui", PlayerGui)
+
+local Stack = {}
 
 Gui.Name = "VNT_Notifications"
 Gui.ResetOnSpawn = false
 Gui.DisplayOrder = 999
 Gui.IgnoreGuiInset = true
 Gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-
-local Stack = {}
 
 local function GetNextY()
 	local Y = TOP
@@ -2681,7 +2684,7 @@ local function Restack()
 
 	for _, Notif in ipairs(Stack) do
 		TweenService:Create(Notif.Holder, RestackInfo, {
-			Position = UDim2.new(1, -MARGIN, 0, Y),
+			Position = UDim2.new(1, -MARGIN, 0, Y)
 		}):Play()
 
 		Y += Notif.Height + GAP
@@ -2705,7 +2708,16 @@ local function Dismiss(Notif)
 
 	local Out = TweenService:Create(Notif.Card, SlideOutInfo, {
 		Position = UDim2.fromOffset(OFFSCREEN_X, 0),
+		BackgroundTransparency = 1
 	})
+
+	TweenService:Create(Notif.Stroke, SlideOutInfo, {
+		Transparency = 1
+	}):Play()
+
+	TweenService:Create(Notif.Glow, SlideOutInfo, {
+		ImageTransparency = 1
+	}):Play()
 
 	Out.Completed:Once(function()
 		Notif.Holder:Destroy()
@@ -2714,12 +2726,11 @@ local function Dismiss(Notif)
 	Out:Play()
 end
 
-local function Push(Title, Text, Duration, Severity)
+local function Push(Title, Text, Duration)
 	while #Stack >= MAX_VISIBLE do
 		Dismiss(Stack[1])
 	end
 
-	local Accent = Accents[Severity] or Accents.warn
 	local InnerWidth = WIDTH - PAD * 2
 
 	local BodyHeight = TextService:GetTextSize(
@@ -2735,6 +2746,7 @@ local function Push(Title, Text, Duration, Severity)
 	local Height = LineY + LINE_HEIGHT + PAD
 
 	local Holder = Instance.new("Frame", Gui)
+	local Glow = Instance.new("ImageLabel", Holder)
 	local Card = Instance.new("TextButton", Holder)
 	local Corner = Instance.new("UICorner", Card)
 	local Stroke = Instance.new("UIStroke", Card)
@@ -2752,39 +2764,56 @@ local function Push(Title, Text, Duration, Severity)
 	Holder.Size = UDim2.fromOffset(WIDTH, Height)
 	Holder.Position = UDim2.new(1, -MARGIN, 0, GetNextY())
 
+	Glow.Name = "Glow"
+	Glow.AnchorPoint = Vector2.new(0.5, 0.5)
+	Glow.BackgroundTransparency = 1
+	Glow.Position = UDim2.fromScale(0.5, 0.5)
+	Glow.Size = UDim2.new(1, 25, 1, 25)
+	Glow.Image = "rbxassetid://5028857084"
+	Glow.ImageColor3 = BLUE
+	Glow.ImageTransparency = 0.95
+	Glow.ScaleType = Enum.ScaleType.Slice
+	Glow.SliceCenter = Rect.new(24, 24, 276, 276)
+	Glow.ZIndex = 0
+
 	Card.Name = "Card"
 	Card.AutoButtonColor = false
 	Card.Text = ""
 	Card.BorderSizePixel = 0
-	Card.BackgroundColor3 = Color3.fromRGB(16, 16, 22)
-	Card.BackgroundTransparency = 0.05
+	Card.BackgroundColor3 = CARD_COLOR
+	Card.BackgroundTransparency = 0.02
 	Card.Size = UDim2.fromScale(1, 1)
 	Card.Position = UDim2.fromOffset(OFFSCREEN_X, 0)
+	Card.ZIndex = 2
 
-	Corner.CornerRadius = UDim.new(0, 10)
+	Corner.CornerRadius = UDim.new(0, 8)
 
-	Stroke.Color = Color3.fromRGB(255, 255, 255)
-	Stroke.Transparency = 0.88
+	Stroke.Color = BLUE
+	Stroke.Transparency = 0.78
 	Stroke.Thickness = 1
 	Stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
 
 	TitleLabel.Name = "Title"
 	TitleLabel.BackgroundTransparency = 1
-	TitleLabel.Position = UDim2.fromOffset(PAD, PAD)
+	TitleLabel.Position = UDim2.fromOffset(PAD, PAD - 1)
 	TitleLabel.Size = UDim2.fromOffset(InnerWidth, TITLE_HEIGHT)
 	TitleLabel.Font = Enum.Font.GothamBold
-	TitleLabel.TextSize = 13
-	TitleLabel.TextColor3 = Accent
+	TitleLabel.TextSize = 12
+	TitleLabel.TextColor3 = BLUE_LIGHT
 	TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
+	TitleLabel.TextYAlignment = Enum.TextYAlignment.Center
+	TitleLabel.TextTruncate = Enum.TextTruncate.AtEnd
 	TitleLabel.RichText = false
 	TitleLabel.Text = string.upper(Title)
+	TitleLabel.ZIndex = 4
 
 	Divider.Name = "Divider"
 	Divider.BorderSizePixel = 0
-	Divider.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-	Divider.BackgroundTransparency = 0.88
+	Divider.BackgroundColor3 = BLUE_DARK
+	Divider.BackgroundTransparency = 0.6
 	Divider.Position = UDim2.fromOffset(PAD, DividerY)
 	Divider.Size = UDim2.fromOffset(InnerWidth, 1)
+	Divider.ZIndex = 4
 
 	BodyLabel.Name = "Body"
 	BodyLabel.BackgroundTransparency = 1
@@ -2792,49 +2821,80 @@ local function Push(Title, Text, Duration, Severity)
 	BodyLabel.Size = UDim2.fromOffset(InnerWidth, BodyHeight)
 	BodyLabel.Font = BODY_FONT
 	BodyLabel.TextSize = BODY_SIZE
-	BodyLabel.TextColor3 = Color3.fromRGB(235, 235, 242)
+	BodyLabel.TextColor3 = BODY_COLOR
 	BodyLabel.TextWrapped = true
 	BodyLabel.TextXAlignment = Enum.TextXAlignment.Left
 	BodyLabel.TextYAlignment = Enum.TextYAlignment.Top
 	BodyLabel.RichText = false
 	BodyLabel.Text = Text
+	BodyLabel.ZIndex = 4
 
 	Track.Name = "DurationTrack"
 	Track.BorderSizePixel = 0
-	Track.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-	Track.BackgroundTransparency = 0.9
+	Track.BackgroundColor3 = BLUE_DARK
+	Track.BackgroundTransparency = 0.65
 	Track.Position = UDim2.fromOffset(PAD, LineY)
 	Track.Size = UDim2.fromOffset(InnerWidth, LINE_HEIGHT)
+	Track.ZIndex = 4
 
 	TrackCorner.CornerRadius = UDim.new(1, 0)
 
 	Fill.Name = "Fill"
 	Fill.BorderSizePixel = 0
-	Fill.BackgroundColor3 = Accent
+	Fill.BackgroundColor3 = BLUE
 	Fill.Size = UDim2.fromScale(1, 1)
+	Fill.ZIndex = 5
 
 	FillCorner.CornerRadius = UDim.new(1, 0)
 
 	local Notif = {
 		Holder = Holder,
 		Card = Card,
+		Stroke = Stroke,
+		Glow = Glow,
 		Height = Height,
-		Dismissed = false,
+		Dismissed = false
 	}
 
 	table.insert(Stack, Notif)
 
 	TweenService:Create(Card, SlideInInfo, {
-		Position = UDim2.fromOffset(0, 0),
+		Position = UDim2.fromOffset(0, 0)
 	}):Play()
 
-	TweenService:Create(
-		Fill,
-		TweenInfo.new(Duration, Enum.EasingStyle.Linear),
-		{ Size = UDim2.fromScale(0, 1) }
-	):Play()
+	TweenService:Create(Fill, TweenInfo.new(Duration, Enum.EasingStyle.Linear), {
+		Size = UDim2.fromScale(0, 1)
+	}):Play()
 
-	Card.MouseButton1Click:Connect(function()
+	Card.MouseEnter:Connect(function()
+		if Notif.Dismissed then
+			return
+		end
+
+		TweenService:Create(Card, HoverInfo, {
+			BackgroundColor3 = CARD_HOVER
+		}):Play()
+
+		TweenService:Create(Stroke, HoverInfo, {
+			Transparency = 0.45
+		}):Play()
+	end)
+
+	Card.MouseLeave:Connect(function()
+		if Notif.Dismissed then
+			return
+		end
+
+		TweenService:Create(Card, HoverInfo, {
+			BackgroundColor3 = CARD_COLOR
+		}):Play()
+
+		TweenService:Create(Stroke, HoverInfo, {
+			Transparency = 0.78
+		}):Play()
+	end)
+
+	Card.Activated:Connect(function()
 		Dismiss(Notif)
 	end)
 
@@ -2851,8 +2911,7 @@ Remote.OnClientEvent:Connect(function(Title, Text, Duration, Severity)
 	Push(
 		string.sub(Title, 1, 40),
 		string.sub(Text, 1, 160),
-		Duration,
-		Severity
+		Duration
 	)
 end)]]></ProtectedString>
 					<bool name="Disabled">false</bool>
