@@ -21,7 +21,7 @@ Vanta is a free, server-side Roblox anticheat.
 - **AntiTeleport** - Detects abnormal position changes that exceed the configured teleport distance. Violations are tracked using strikes and cooldowns to reduce false detections.
 - **AntiNoclip** - Detects players moving through solid objects. Violations are tracked using strikes and cooldowns.
 - **AntiFly** - Detects abnormal airborne movement that may indicate flying. Players are checked against the configured maximum air time before receiving strikes.
-- **AntiFling** - Detects abnormal physics affecting a player's `HumanoidRootPart`, including excessive linear or angular velocity. Multiple violations can result in a kick.
+- **AntiFling** - Prevents exploiters from flinging players by disabling character collisions. Players remain fully collidable with the game environment, so this does not enable noclip.
 - **Whitelist API** - Temporarily prevents Vanta's movement checks from flagging players during legitimate game mechanics such as teleporters, portals, launchers, or cutscenes. Supports `AntiFly`, `AntiNoclip`, `AntiSpeed`, and `AntiTeleport`.
 - **Automatic Version Checking** - Checks the latest version listed in Vanta's GitHub `Version.txt` and warns in the server output when the installed version is outdated.
 
