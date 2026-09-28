@@ -2,11 +2,10 @@
 	<Meta name="ExplicitAutoJoints">true</Meta>
 	<External>null</External>
 	<External>nil</External>
-	<Item class="ModuleScript" referent="RBXA56183AC206442B4BE1444EB5E6CEE75">
+	<Item class="ModuleScript" referent="RBX5A39B9A017484730897B08A338F28D7E">
 		<Properties>
 			<Content name="LinkedSource"><null></null></Content>
 			<ProtectedString name="Source"><![CDATA[--[[
-
 	██╗   ██╗ █████╗ ███╗   ██╗████████╗ █████╗ 
 	██║   ██║██╔══██╗████╗  ██║╚══██╔══╝██╔══██╗
 	██║   ██║███████║██╔██╗ ██║   ██║   ███████║
@@ -17,12 +16,14 @@
 	Vanta - Security, for free.
 	Created by JustSomeGuest
 
-	Version 1.0.0
+	Version: v1.0.0
 
 	Creator:
 	GitHub: https://github.com/justsomeguest
 	Roblox: https://www.roblox.com/users/10960910215/profile
 	
+	Source: https://github.com/JustSomeGuest/Vanta
+
 	Setup:
 	Drag this modulescript into 'ServerScriptService'
 	Optionally change the settings below.
@@ -43,7 +44,8 @@ local Settings = {
 	-- Detects backdoor scanners using a honeypot RemoteEvent.
 	AntiBackdoor = true,
 
-	-- Prevents protected LocalScripts and RemoteEvents from being deleted.
+	-- Prevents protected LocalScripts, ModuleScripts, RemoteEvents,
+	-- and Vanta's notification UI from being deleted.
 	AntiDeletion = true,
 
 	-- Detects and corrects abnormal player movement speeds.
@@ -183,14 +185,15 @@ end
 --[[
 	Vanta.Whitelist(Player, Duration, Only)
 
-	Temporarily stops Vanta from flagging a player, so things in your game that
-	move players in ways the anticheat would normally catch (portals, teleport
-	pads, launchers, cutscenes) don't cause false detections.
+	Temporarily prevents Vanta's movement checks from flagging a player.
+	This is useful for legitimate game mechanics that move players in ways
+	Vanta would normally detect, such as portals, teleport pads, launchers,
+	and cutscenes.
 
 	Player:   the player to whitelist
 	Duration: how long in seconds (default 1)
 	Only:     optional, a module name or a list of module names
-	          leave it out to whitelist the player in every module below
+	          leave it out to whitelist the player in every supported module
 
 	Supported modules: AntiFly, AntiNoclip, AntiSpeed, AntiTeleport
 
@@ -205,12 +208,13 @@ end
 	-- only whitelist the checks a portal would trip
 	Vanta.Whitelist(Player, 2, {"AntiTeleport", "AntiNoclip"})
 
-	-- a single module
+	-- whitelist a single module
 	Vanta.Whitelist(Player, 1, "AntiSpeed")
 
-	Call it right BEFORE moving the player. Modules that are disabled in the
-	settings above are skipped, and they start being whitelisted as soon as
-	you enable them.
+	Call it right BEFORE moving the player.
+
+	Modules that are disabled in the settings above are skipped automatically.
+	If a disabled module is enabled later, it will also support whitelisting.
 --]]
 
 function Api.Whitelist(Player, Duration, Only)
@@ -266,7 +270,7 @@ return setmetatable(Settings, {
 			<int64 name="SourceAssetId">-1</int64>
 			<SharedString name="Tags">yuZpQdnvvUBOTYh1jqZ2cA==</SharedString>
 		</Properties>
-		<Item class="Script" referent="RBXC3D5241C93D349DFAE5458BB452C6F07">
+		<Item class="Script" referent="RBX63FDD8A13E014D21AF12C0750865BE1F">
 			<Properties>
 				<ProtectedString name="Source"><![CDATA[local Players = game:GetService("Players")
 local ReplicatedFirst = game:GetService("ReplicatedFirst")
@@ -335,7 +339,7 @@ end)]]></ProtectedString>
 				<SharedString name="Tags">yuZpQdnvvUBOTYh1jqZ2cA==</SharedString>
 			</Properties>
 		</Item>
-		<Item class="Folder" referent="RBXD6C296C9014D4F4FAACB27F7FD464C6F">
+		<Item class="Folder" referent="RBXF9D02813223A4971BDA140E55CCA549B">
 			<Properties>
 				<Color3 name="IconTint">
 					<R>0</R>
@@ -349,7 +353,7 @@ end)]]></ProtectedString>
 				<int64 name="SourceAssetId">-1</int64>
 				<SharedString name="Tags">yuZpQdnvvUBOTYh1jqZ2cA==</SharedString>
 			</Properties>
-			<Item class="ModuleScript" referent="RBX3A78A213EF44415685567085DF0BB5EC">
+			<Item class="ModuleScript" referent="RBX510FA5927BDB4A33A4FC7416A97FBE1B">
 				<Properties>
 					<Content name="LinkedSource"><null></null></Content>
 					<ProtectedString name="Source"><![CDATA[local AntiBackdoor = {}
@@ -497,7 +501,7 @@ return AntiBackdoor]]></ProtectedString>
 					<SharedString name="Tags">yuZpQdnvvUBOTYh1jqZ2cA==</SharedString>
 				</Properties>
 			</Item>
-			<Item class="ModuleScript" referent="RBX4576828093FC488A9E1B27C22D3D79A0">
+			<Item class="ModuleScript" referent="RBX1EE7C96AC2E84AF9B8F5666FA1FDDE92">
 				<Properties>
 					<Content name="LinkedSource"><null></null></Content>
 					<ProtectedString name="Source"><![CDATA[local AntiDeletion = {}
@@ -579,7 +583,6 @@ Remote.OnServerEvent:Connect(function(Player, Action, Sequence, Challenge, Valid
 		return
 	end
 
-	-- Client reported its notification GUI was deleted
 	if Action == "GuiDeleted" then
 		KickPlayer(Player)
 		return
@@ -673,7 +676,7 @@ return AntiDeletion]]></ProtectedString>
 					<SharedString name="Tags">yuZpQdnvvUBOTYh1jqZ2cA==</SharedString>
 				</Properties>
 			</Item>
-			<Item class="ModuleScript" referent="RBXB2798AD2685D47D69CFD94BA6F9C0559">
+			<Item class="ModuleScript" referent="RBX188276B3990E434CB4912842156BC8DE">
 				<Properties>
 					<Content name="LinkedSource"><null></null></Content>
 					<ProtectedString name="Source"><![CDATA[local AntiSpeed = {}
@@ -1019,7 +1022,7 @@ return AntiSpeed]]></ProtectedString>
 					<SharedString name="Tags">yuZpQdnvvUBOTYh1jqZ2cA==</SharedString>
 				</Properties>
 			</Item>
-			<Item class="ModuleScript" referent="RBX18DF218CBC804ACF8E9F61CADA5A3AAD">
+			<Item class="ModuleScript" referent="RBXD00B9181EEF743308A60EE8751CE31E3">
 				<Properties>
 					<Content name="LinkedSource"><null></null></Content>
 					<ProtectedString name="Source"><![CDATA[local AntiTeleport = {}
@@ -1269,7 +1272,7 @@ return AntiTeleport]]></ProtectedString>
 					<SharedString name="Tags">yuZpQdnvvUBOTYh1jqZ2cA==</SharedString>
 				</Properties>
 			</Item>
-			<Item class="ModuleScript" referent="RBX0ABAAEC10D814AB0A5B3C424D594FD4B">
+			<Item class="ModuleScript" referent="RBXA6640C142B8141A99506FAE4A1A4B5F5">
 				<Properties>
 					<Content name="LinkedSource"><null></null></Content>
 					<ProtectedString name="Source"><![CDATA[local AntiNoclip = {}
@@ -1305,22 +1308,17 @@ local MinPenetration = Config.MinPenetration or 0
 local InsideMargin = Config.InsideMargin or 0.15
 local MaxRayHops = Config.MaxRayHops or 8
 
--- After a rubberband, keep snapping the player back if they drift away from the
--- rollback spot (their client keeps sending stale positions until it gets the teleport)
 local RubberbandHold = Config.RubberbandHold or 0.4
 local RubberbandRadius = Config.RubberbandRadius or 3
 
 local Debug = Config.Debug == true
 
--- Skip every check
 local HardExempt = {
 	[Enum.HumanoidStateType.Seated] = true,
 	[Enum.HumanoidStateType.Swimming] = true,
 	[Enum.HumanoidStateType.Climbing] = true,
 }
 
--- Only skip the "sitting inside a block" check, tunnelling is still checked
--- (a client can force these states, so they can't be a full bypass)
 local SoftExempt = {
 	[Enum.HumanoidStateType.PlatformStanding] = true,
 	[Enum.HumanoidStateType.Ragdoll] = true,
@@ -1683,7 +1681,6 @@ local function SetupPlayer(Player)
 			return
 		end
 
-		-- Rubberband hold: independent from strikes and strike cooldown
 		if HoldPosition then
 			if Now >= HoldUntil then
 				HoldPosition = nil
@@ -1702,7 +1699,6 @@ local function SetupPlayer(Player)
 
 		local Moved = (CurrentPosition - LastPosition).Magnitude > 0.001
 
-		-- 1) Tunnelling: path from the last verified-outside spot crosses a solid surface
 		local Crossed = nil
 
 		if Moved then
@@ -1715,14 +1711,12 @@ local function SetupPlayer(Player)
 			end
 		end
 
-		-- 2) Sitting inside a solid block (only re-checked when moved / already inside)
 		local Inside = nil
 
 		if not Crossed and CheckInside and (Moved or WasInside) then
 			Inside = FindPenetratingPart(CurrentPosition, Character)
 		end
 
-		-- 3) Was inside a solid, now outside again = they went through it
 		local Exited = CheckInside
 			and WasInside
 			and Inside == nil
@@ -1749,7 +1743,6 @@ local function SetupPlayer(Player)
 		if SuspiciousTime >= ConfirmationTime then
 			local RecoveryPosition = LastSafePosition
 
-			-- Rubberband: always happens on a detection
 			Snap(RootPart, RecoveryPosition)
 
 			LastPosition = RecoveryPosition
@@ -1761,7 +1754,6 @@ local function SetupPlayer(Player)
 
 			Log("rubberband", Reason)
 
-			-- Strikes: separate system, only the strike counter uses the cooldown
 			if Now - LastStrikeTime >= StrikeCooldown then
 				LastStrikeTime = Now
 				Strikes += 1
@@ -1817,7 +1809,7 @@ return AntiNoclip]]></ProtectedString>
 					<SharedString name="Tags">yuZpQdnvvUBOTYh1jqZ2cA==</SharedString>
 				</Properties>
 			</Item>
-			<Item class="ModuleScript" referent="RBX6F24457751F04F96A2D9537E5007AED1">
+			<Item class="ModuleScript" referent="RBX6939A81B58644D9CA80093C1702308B2">
 				<Properties>
 					<Content name="LinkedSource"><null></null></Content>
 					<ProtectedString name="Source"><![CDATA[local AntiFly = {}
@@ -2117,7 +2109,7 @@ return AntiFly]]></ProtectedString>
 					<SharedString name="Tags">yuZpQdnvvUBOTYh1jqZ2cA==</SharedString>
 				</Properties>
 			</Item>
-			<Item class="ModuleScript" referent="RBXF5B27A97884E4712B67B5D60EBED1CD0">
+			<Item class="ModuleScript" referent="RBX77EEF89F7C1B45EDAD00C0B56FBE5961">
 				<Properties>
 					<Content name="LinkedSource"><null></null></Content>
 					<ProtectedString name="Source"><![CDATA[local Kick = {}
@@ -2226,7 +2218,7 @@ return Kick]]></ProtectedString>
 					<SharedString name="Tags">yuZpQdnvvUBOTYh1jqZ2cA==</SharedString>
 				</Properties>
 			</Item>
-			<Item class="ModuleScript" referent="RBXFBD7CCA8577640789282E72BBBECAF03">
+			<Item class="ModuleScript" referent="RBX4FD4C63C30694238A7964DFFF74266B0">
 				<Properties>
 					<Content name="LinkedSource"><null></null></Content>
 					<ProtectedString name="Source"><![CDATA[local Notify = {}
@@ -2313,7 +2305,7 @@ return Notify]]></ProtectedString>
 					<SharedString name="Tags">yuZpQdnvvUBOTYh1jqZ2cA==</SharedString>
 				</Properties>
 			</Item>
-			<Item class="ModuleScript" referent="RBX50ED217C9D814FD1AB552156BC823873">
+			<Item class="ModuleScript" referent="RBX264F386971D042B3A0BE6564446600CD">
 				<Properties>
 					<Content name="LinkedSource"><null></null></Content>
 					<ProtectedString name="Source"><![CDATA[local AntiFling = {}
@@ -2456,7 +2448,7 @@ return AntiFling]]></ProtectedString>
 				</Properties>
 			</Item>
 		</Item>
-		<Item class="Folder" referent="RBXE161362D6F4343DD88126703247CDF14">
+		<Item class="Folder" referent="RBX41F6F54724FB4DAE8E449B717D59494D">
 			<Properties>
 				<Color3 name="IconTint">
 					<R>0</R>
@@ -2470,7 +2462,7 @@ return AntiFling]]></ProtectedString>
 				<int64 name="SourceAssetId">-1</int64>
 				<SharedString name="Tags">yuZpQdnvvUBOTYh1jqZ2cA==</SharedString>
 			</Properties>
-			<Item class="LocalScript" referent="RBX8DD9D438230F4984AC4AF0DC5B38B835">
+			<Item class="LocalScript" referent="RBX1EA34780621843BC8D570467C63D8AE4">
 				<Properties>
 					<ProtectedString name="Source"><![CDATA[if not game:IsLoaded() then
 	game.Loaded:Wait()
@@ -2554,8 +2546,6 @@ end
 PlayerScripts.DescendantAdded:Connect(WatchObject)
 ReplicatedStorage.DescendantAdded:Connect(WatchObject)
 
--- Notification GUI is created at runtime by the notify script, so wait for it.
--- Kept out of WatchedObjects on purpose so the heartbeat count doesn't change.
 task.spawn(function()
 	local Gui = PlayerGui:WaitForChild("VNT_Notifications", 30)
 
@@ -2648,7 +2638,7 @@ end)]]></ProtectedString>
 					<SharedString name="Tags">yuZpQdnvvUBOTYh1jqZ2cA==</SharedString>
 				</Properties>
 			</Item>
-			<Item class="LocalScript" referent="RBX2A46AAC9D4FE46C8BF02AE1A5DF14D81">
+			<Item class="LocalScript" referent="RBXC473A3AD30514A70A0A6AC6E0794F41B">
 				<Properties>
 					<ProtectedString name="Source"><![CDATA[local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
