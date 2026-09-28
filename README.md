@@ -27,9 +27,11 @@ Vanta is a free, server-side Roblox anticheat.
 
 ## Installation
 
-1. Put `Vanta` in `ServerScriptService`.
-2. Configure the settings if needed.
-3. Done.
+1. Download [`Vanta.rbxmx`](Vanta.rbxmx).
+2. Drag `Vanta.rbxmx` into **Workspace** in Roblox Studio.
+3. Drag `Vanta` from **Workspace** into `ServerScriptService`.
+4. Configure the settings if needed.
+5. Done.
 
 ## Whitelist
 
