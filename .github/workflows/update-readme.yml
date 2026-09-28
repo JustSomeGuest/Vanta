@@ -1,0 +1,49 @@
+name: Update README Version
+
+on:
+  push:
+    paths:
+      - "Version.txt"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  update-readme:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Get version
+        id: version
+        run: |
+          VERSION=$(cat Version.txt | tr -d '[:space:]')
+
+          if [[ "$VERSION" == v* ]]; then
+            VERSION="${VERSION#v}"
+          fi
+
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Update README
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+
+          sed -i "s/<!-- VERSION -->.*<!-- VERSION -->/<!-- VERSION -->v${VERSION}<!-- VERSION -->/" README.md
+
+      - name: Commit changes
+        run: |
+          if git diff --quiet README.md; then
+            echo "README is already up to date."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add README.md
+          git commit -m "Update README version to v${{ steps.version.outputs.version }}"
+          git push
