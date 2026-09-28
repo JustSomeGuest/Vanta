@@ -29,7 +29,6 @@
 	Optionally change the settings below.
 	
 	!!! DO NOT CHANGE ANYTHING EXCEPT SETTINGS !!!
-	
 --]]
 
 local HttpService = game:GetService("HttpService")
