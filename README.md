@@ -63,7 +63,7 @@ Supported modules:
 
 ## Version
 
-Newest Version: <!-- VERSION -->v1.0.0<!-- VERSION -->
+Newest Version: <!-- VERSION -->v1.0.1<!-- VERSION -->
 
 ## Creator
 
