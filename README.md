@@ -13,6 +13,10 @@
 
 Vanta is a free, server-side Roblox anticheat.
 
+## Version
+
+Newest Version: <!-- VERSION -->v1.0.1<!-- VERSION -->
+
 ## Features
 
 - **AntiBackdoor** - Uses a honeypot `RemoteEvent` to detect backdoor scanners probing your game for exploitable remotes.
@@ -60,10 +64,6 @@ Supported modules:
 * `AntiNoclip`
 * `AntiSpeed`
 * `AntiTeleport`
-
-## Version
-
-Newest Version: <!-- VERSION -->v1.0.1<!-- VERSION -->
 
 ## Creator
 
