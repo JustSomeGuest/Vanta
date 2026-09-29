@@ -2,7 +2,7 @@
 	<Meta name="ExplicitAutoJoints">true</Meta>
 	<External>null</External>
 	<External>nil</External>
-	<Item class="ModuleScript" referent="RBXE7E79F836C7443CCA1431F920AE4F480">
+	<Item class="ModuleScript" referent="RBX0377FFEAB2944868A231001AF8A0A4D5">
 		<Properties>
 			<Content name="LinkedSource"><null></null></Content>
 			<ProtectedString name="Source"><![CDATA[--[[
@@ -16,7 +16,7 @@
 	Vanta - Security, for free.
 	Created by JustSomeGuest
 
-	Version: v1.0.0
+	Version: v1.0.1
 
 	Creator:
 	GitHub: https://github.com/justsomeguest
@@ -34,7 +34,7 @@
 local HttpService = game:GetService("HttpService")
 local RunService = game:GetService("RunService")
 
-local Version = "1.0.0"
+local Version = "1.0.1"
 
 local VERSION_URL = "https://raw.githubusercontent.com/JustSomeGuest/Vanta/Main/Version.txt"
 
@@ -252,7 +252,7 @@ return setmetatable(Settings, {
 			<int64 name="SourceAssetId">-1</int64>
 			<SharedString name="Tags">yuZpQdnvvUBOTYh1jqZ2cA==</SharedString>
 		</Properties>
-		<Item class="Script" referent="RBXE3F4AD554E7E496692EF464DFCA7B3FE">
+		<Item class="Script" referent="RBX5CB470BE37434BBE80A6765F55D18E37">
 			<Properties>
 				<ProtectedString name="Source"><![CDATA[local Players = game:GetService("Players")
 local ReplicatedFirst = game:GetService("ReplicatedFirst")
@@ -321,7 +321,7 @@ end)]]></ProtectedString>
 				<SharedString name="Tags">yuZpQdnvvUBOTYh1jqZ2cA==</SharedString>
 			</Properties>
 		</Item>
-		<Item class="Folder" referent="RBXCF93E3E7E9FB46868F095C0913DC76F9">
+		<Item class="Folder" referent="RBXDFA8B44562E14C0B944CD67AED7C2FF8">
 			<Properties>
 				<Color3 name="IconTint">
 					<R>0</R>
@@ -335,7 +335,7 @@ end)]]></ProtectedString>
 				<int64 name="SourceAssetId">-1</int64>
 				<SharedString name="Tags">yuZpQdnvvUBOTYh1jqZ2cA==</SharedString>
 			</Properties>
-			<Item class="ModuleScript" referent="RBXB1C6BD00ECF649148FEF24C4DD611DC2">
+			<Item class="ModuleScript" referent="RBX50A8C93641D34829B089C74C9C6DE455">
 				<Properties>
 					<Content name="LinkedSource"><null></null></Content>
 					<ProtectedString name="Source"><![CDATA[local AntiBackdoor = {}
@@ -483,7 +483,7 @@ return AntiBackdoor]]></ProtectedString>
 					<SharedString name="Tags">yuZpQdnvvUBOTYh1jqZ2cA==</SharedString>
 				</Properties>
 			</Item>
-			<Item class="ModuleScript" referent="RBXD2A9A70C171C44B7AB86B51D831FF285">
+			<Item class="ModuleScript" referent="RBXF39C4A02938741B1881B69A83843318A">
 				<Properties>
 					<Content name="LinkedSource"><null></null></Content>
 					<ProtectedString name="Source"><![CDATA[local AntiDeletion = {}
@@ -658,7 +658,7 @@ return AntiDeletion]]></ProtectedString>
 					<SharedString name="Tags">yuZpQdnvvUBOTYh1jqZ2cA==</SharedString>
 				</Properties>
 			</Item>
-			<Item class="ModuleScript" referent="RBX650263944D9541DE8FE6362DAFE42547">
+			<Item class="ModuleScript" referent="RBXF064366288754407B6A595AE6DF7F703">
 				<Properties>
 					<Content name="LinkedSource"><null></null></Content>
 					<ProtectedString name="Source"><![CDATA[local AntiSpeed = {}
@@ -1004,7 +1004,7 @@ return AntiSpeed]]></ProtectedString>
 					<SharedString name="Tags">yuZpQdnvvUBOTYh1jqZ2cA==</SharedString>
 				</Properties>
 			</Item>
-			<Item class="ModuleScript" referent="RBXEE145ACB17F14FDDAFB0584D6FA840A7">
+			<Item class="ModuleScript" referent="RBX0875A5D855604C0E8FDDDFB355B23E48">
 				<Properties>
 					<Content name="LinkedSource"><null></null></Content>
 					<ProtectedString name="Source"><![CDATA[local AntiTeleport = {}
@@ -1254,7 +1254,7 @@ return AntiTeleport]]></ProtectedString>
 					<SharedString name="Tags">yuZpQdnvvUBOTYh1jqZ2cA==</SharedString>
 				</Properties>
 			</Item>
-			<Item class="ModuleScript" referent="RBX6E87377CA3D1480AB08FEB2EB2F06404">
+			<Item class="ModuleScript" referent="RBX2ED64BBDAA364990B73629767C207116">
 				<Properties>
 					<Content name="LinkedSource"><null></null></Content>
 					<ProtectedString name="Source"><![CDATA[local AntiNoclip = {}
@@ -1791,7 +1791,7 @@ return AntiNoclip]]></ProtectedString>
 					<SharedString name="Tags">yuZpQdnvvUBOTYh1jqZ2cA==</SharedString>
 				</Properties>
 			</Item>
-			<Item class="ModuleScript" referent="RBX6BD48B20CDB742D29F7D89C1CA894FBD">
+			<Item class="ModuleScript" referent="RBXD530B09BED844DBD83A15FCF19AC9A8D">
 				<Properties>
 					<Content name="LinkedSource"><null></null></Content>
 					<ProtectedString name="Source"><![CDATA[local AntiFly = {}
@@ -1811,40 +1811,59 @@ if not Config.Enabled then
 	return AntiFly
 end
 
-local ExemptStates = {
+local HardExempt = {
 	[Enum.HumanoidStateType.Seated] = true,
-	[Enum.HumanoidStateType.PlatformStanding] = true,
-	[Enum.HumanoidStateType.Ragdoll] = true,
-	[Enum.HumanoidStateType.Physics] = true,
 	[Enum.HumanoidStateType.Swimming] = true,
 	[Enum.HumanoidStateType.Climbing] = true,
 }
 
+local SoftExempt = {
+	[Enum.HumanoidStateType.PlatformStanding] = true,
+	[Enum.HumanoidStateType.Ragdoll] = true,
+	[Enum.HumanoidStateType.Physics] = true,
+	[Enum.HumanoidStateType.FallingDown] = true,
+	[Enum.HumanoidStateType.GettingUp] = true,
+}
+
 local StrikeLimit = Config.StrikeLimit or 3
 local StrikeCooldown = Config.StrikeCooldown or 5
-local MaxAirTime = Config.MaxAirTime or 1.8
-local GroundCheckDistance = 6
-local StrikeDecayTime = 30
-local RecoveryDelay = 0.25
+local StrikeDecayTime = Config.StrikeDecayTime or 30
+
+local SpawnGrace = Config.SpawnGrace or 1.5
+local ConfirmationTime = Config.ConfirmationTime or 0.18
+local MaxAirTime = Config.MaxAirTime or 2
+local GroundCheckDistance = Config.GroundCheckDistance or 5
+local HoverVerticalSpeed = Config.HoverVerticalSpeed or 1.5
+local MinHoverHeight = Config.MinHoverHeight or 5
+local SuspiciousUpwardVelocity = Config.SuspiciousUpwardVelocity or 3
+
+local RubberbandHold = Config.RubberbandHold or 0.35
+local RubberbandRadius = Config.RubberbandRadius or 4
+
+local Debug = Config.Debug == true
 
 local GroundRayParams = RaycastParams.new()
 GroundRayParams.FilterType = Enum.RaycastFilterType.Exclude
+GroundRayParams.RespectCanCollide = true
+GroundRayParams.IgnoreWater = true
 
 local Connections = {}
 local WhitelistUntil = {}
 
 local function GetHipOffset(Humanoid, RootPart)
-	return Humanoid.RigType == Enum.HumanoidRigType.R6
-		and 3
-		or (Humanoid.HipHeight + (RootPart.Size.Y / 2))
+	if Humanoid.RigType == Enum.HumanoidRigType.R6 then
+		return 3
+	end
+
+	return Humanoid.HipHeight + (RootPart.Size.Y / 2)
 end
 
-local function GetGroundPosition(Character, RootPart, Humanoid)
+local function GetGroundInfo(Character, RootPart, Humanoid, Distance)
 	GroundRayParams.FilterDescendantsInstances = {Character}
 
 	local Result = Workspace:Raycast(
 		RootPart.Position,
-		Vector3.new(0, -GroundCheckDistance, 0),
+		Vector3.new(0, -Distance, 0),
 		GroundRayParams
 	)
 
@@ -1854,33 +1873,17 @@ local function GetGroundPosition(Character, RootPart, Humanoid)
 
 	local HipOffset = GetHipOffset(Humanoid, RootPart)
 
-	return Vector3.new(
+	local Position = Vector3.new(
 		RootPart.Position.X,
 		Result.Position.Y + HipOffset,
 		RootPart.Position.Z
 	)
-end
 
-local function FindFloorBelow(Character, RootPart, Humanoid)
-	GroundRayParams.FilterDescendantsInstances = {Character}
-
-	local Result = Workspace:Raycast(
-		RootPart.Position,
-		Vector3.new(0, -1000, 0),
-		GroundRayParams
-	)
-
-	if not Result then
-		return nil
-	end
-
-	local HipOffset = GetHipOffset(Humanoid, RootPart)
-
-	return Vector3.new(
-		RootPart.Position.X,
-		Result.Position.Y + HipOffset,
-		Result.Position.Z
-	)
+	return {
+		Position = Position,
+		Height = RootPart.Position.Y - Position.Y,
+		Result = Result,
+	}
 end
 
 function AntiFly.Whitelist(Player, Duration)
@@ -1890,7 +1893,8 @@ function AntiFly.Whitelist(Player, Duration)
 
 	local Until = os.clock() + (Duration or 1)
 
-	if not WhitelistUntil[Player] or Until > WhitelistUntil[Player] then
+	if not WhitelistUntil[Player]
+		or Until > WhitelistUntil[Player] then
 		WhitelistUntil[Player] = Until
 	end
 end
@@ -1910,42 +1914,47 @@ local function IsWhitelisted(Player)
 	return true
 end
 
-local function AddStrike(Player, CurrentStrikes)
-	if CurrentStrikes >= StrikeLimit then
-		return true
-	end
-
-	Notify:Send(
-		Player,
-		"AntiFly"
-	)
-
-	return false
-end
-
 local function SetupPlayer(Player)
-	local LastGroundedPosition
-	local AirTimeStart = 0
-	local IsAirborne = false
-	local SuspiciousTime = 0
+	local CurrentCharacter = nil
+
 	local SpawnTime = os.clock()
-	local CurrentCharacter
+
+	local LastPosition = nil
+	local LastGroundedPosition = nil
+
+	local Airborne = false
+	local AirStart = 0
+	local SuspiciousTime = 0
+
+	local HoldPosition = nil
+	local HoldUntil = 0
+
 	local Strikes = 0
 	local LastStrikeTime = 0
-	local LastGroundedTime = os.clock()
-	local RecoveryUntil = 0
+	local LastStrikeDecay = os.clock()
+
+	local function ResetTracking(Position)
+		LastPosition = Position
+		LastGroundedPosition = Position
+
+		Airborne = false
+		AirStart = 0
+		SuspiciousTime = 0
+
+		HoldPosition = nil
+		HoldUntil = 0
+
+		LastStrikeDecay = os.clock()
+	end
 
 	local function OnCharacterAdded(Character)
 		CurrentCharacter = Character
-		LastGroundedPosition = nil
-		AirTimeStart = 0
-		IsAirborne = false
-		SuspiciousTime = 0
 		SpawnTime = os.clock()
+
 		Strikes = 0
 		LastStrikeTime = 0
-		LastGroundedTime = os.clock()
-		RecoveryUntil = 0
+
+		ResetTracking(nil)
 	end
 
 	Player.CharacterAdded:Connect(OnCharacterAdded)
@@ -1957,111 +1966,189 @@ local function SetupPlayer(Player)
 	Connections[Player] = RunService.Heartbeat:Connect(function(DeltaTime)
 		local Character = Player.Character
 
-		if Character ~= CurrentCharacter then
+		if not Character or Character ~= CurrentCharacter then
 			return
 		end
 
-		local RootPart = Character and Character:FindFirstChild("HumanoidRootPart")
-		local Humanoid = Character and Character:FindFirstChildOfClass("Humanoid")
+		local RootPart = Character:FindFirstChild("HumanoidRootPart")
+		local Humanoid = Character:FindFirstChildOfClass("Humanoid")
 
 		if not RootPart or not Humanoid then
-			LastGroundedPosition = nil
-			IsAirborne = false
-			SuspiciousTime = 0
+			ResetTracking(nil)
 			return
 		end
 
 		local Now = os.clock()
 
-		if Now - SpawnTime < 1.5 or IsWhitelisted(Player) then
-			LastGroundedPosition = RootPart.Position
-			IsAirborne = false
-			SuspiciousTime = 0
-			LastGroundedTime = Now
+		if Now - SpawnTime < SpawnGrace then
+			ResetTracking(RootPart.Position)
+			return
+		end
+
+		if IsWhitelisted(Player) then
+			ResetTracking(RootPart.Position)
 			return
 		end
 
 		local State = Humanoid:GetState()
 
-		if ExemptStates[State] then
-			LastGroundedPosition = RootPart.Position
-			IsAirborne = false
-			SuspiciousTime = 0
-			LastGroundedTime = Now
+		if HardExempt[State] then
+			ResetTracking(RootPart.Position)
 			return
 		end
 
-		local GroundPosition = GetGroundPosition(
+		if SoftExempt[State] then
+			LastPosition = RootPart.Position
+			LastGroundedPosition = RootPart.Position
+			Airborne = false
+			AirStart = 0
+			SuspiciousTime = 0
+			return
+		end
+
+		local CurrentPosition = RootPart.Position
+		local VelocityY = RootPart.AssemblyLinearVelocity.Y
+
+		if not LastPosition then
+			ResetTracking(CurrentPosition)
+			return
+		end
+
+		if HoldPosition then
+			if Now >= HoldUntil then
+				HoldPosition = nil
+			elseif (CurrentPosition - HoldPosition).Magnitude > RubberbandRadius then
+				RootPart.CFrame =
+					CFrame.new(HoldPosition)
+					* RootPart.CFrame.Rotation
+
+				RootPart.AssemblyLinearVelocity = Vector3.zero
+				RootPart.AssemblyAngularVelocity = Vector3.zero
+
+				LastPosition = HoldPosition
+				LastGroundedPosition = HoldPosition
+
+				Airborne = false
+				AirStart = 0
+				SuspiciousTime = 0
+
+				return
+			end
+		end
+
+		local GroundInfo = GetGroundInfo(
 			Character,
 			RootPart,
-			Humanoid
+			Humanoid,
+			GroundCheckDistance
 		)
 
-		if GroundPosition then
-			LastGroundedPosition = GroundPosition
-			IsAirborne = false
-			SuspiciousTime = 0
-			LastGroundedTime = Now
+		local Grounded = false
 
-			if Now - LastStrikeTime >= StrikeDecayTime then
-				Strikes = math.max(0, Strikes - 1)
-				LastStrikeTime = Now
+		if GroundInfo then
+			Grounded = GroundInfo.Height <= 3.5
+		end
+
+		if Grounded then
+			LastGroundedPosition = GroundInfo.Position
+			LastPosition = CurrentPosition
+
+			Airborne = false
+			AirStart = 0
+			SuspiciousTime = 0
+
+			if Strikes > 0
+				and Now - LastStrikeDecay >= StrikeDecayTime then
+				Strikes -= 1
+				LastStrikeDecay = Now
 			end
 
 			return
 		end
 
-		if not IsAirborne then
-			IsAirborne = true
-			AirTimeStart = Now
+		if not Airborne then
+			Airborne = true
+			AirStart = Now
 			SuspiciousTime = 0
+			LastPosition = CurrentPosition
 			return
 		end
 
-		local TimeAirborne = Now - AirTimeStart
-		local VelocityY = RootPart.AssemblyLinearVelocity.Y
+		local AirTime = Now - AirStart
 
-		if TimeAirborne > MaxAirTime and VelocityY >= -2 then
+		local Hovering = false
+		local ArtificialLift = false
+
+		if AirTime >= MaxAirTime then
+			local FarGround = GetGroundInfo(
+				Character,
+				RootPart,
+				Humanoid,
+				GroundCheckDistance * 2
+			)
+
+			local HeightAboveGround =
+				FarGround and FarGround.Height or nil
+
+			Hovering =
+				HeightAboveGround ~= nil
+				and HeightAboveGround >= MinHoverHeight
+				and math.abs(VelocityY) <= HoverVerticalSpeed
+
+			ArtificialLift =
+				VelocityY >= SuspiciousUpwardVelocity
+		end
+
+		if Hovering or ArtificialLift then
 			SuspiciousTime += DeltaTime
+		elseif VelocityY < -HoverVerticalSpeed then
+			SuspiciousTime = math.max(
+				0,
+				SuspiciousTime - DeltaTime * 2
+			)
 		else
 			SuspiciousTime = math.max(
 				0,
-				SuspiciousTime - DeltaTime
+				SuspiciousTime - DeltaTime * 0.5
 			)
 		end
 
-		if SuspiciousTime < RecoveryDelay then
+		if SuspiciousTime < ConfirmationTime then
+			LastPosition = CurrentPosition
 			return
 		end
 
-		local TargetPosition =
-			FindFloorBelow(Character, RootPart, Humanoid)
-			or LastGroundedPosition
+		if LastGroundedPosition then
+			RootPart.CFrame =
+				CFrame.new(LastGroundedPosition)
+				* RootPart.CFrame.Rotation
 
-		if TargetPosition then
-			RootPart.CFrame = CFrame.new(TargetPosition)
 			RootPart.AssemblyLinearVelocity = Vector3.zero
-			LastGroundedPosition = TargetPosition
+			RootPart.AssemblyAngularVelocity = Vector3.zero
+
+			HoldPosition = LastGroundedPosition
+			HoldUntil = Now + RubberbandHold
+
+			LastPosition = LastGroundedPosition
+		else
+			LastPosition = CurrentPosition
 		end
 
-		IsAirborne = false
-		AirTimeStart = 0
+		Airborne = false
+		AirStart = 0
 		SuspiciousTime = 0
-		RecoveryUntil = Now + RecoveryDelay
 
 		if Now - LastStrikeTime >= StrikeCooldown then
 			LastStrikeTime = Now
 			Strikes += 1
+			LastStrikeDecay = Now
 
 			if Strikes >= StrikeLimit then
 				Kick:Init(Player, "AntiFly")
 				return
 			end
 
-			Notify:Send(
-				Player,
-				"AntiFly"
-			)
+			Notify:Send(Player, "AntiFly")
 		end
 	end)
 end
@@ -2077,7 +2164,7 @@ Players.PlayerRemoving:Connect(function(Player)
 	WhitelistUntil[Player] = nil
 end)
 
-for _, Player in Players:GetPlayers() do
+for _, Player in ipairs(Players:GetPlayers()) do
 	SetupPlayer(Player)
 end
 
@@ -2091,7 +2178,7 @@ return AntiFly]]></ProtectedString>
 					<SharedString name="Tags">yuZpQdnvvUBOTYh1jqZ2cA==</SharedString>
 				</Properties>
 			</Item>
-			<Item class="ModuleScript" referent="RBXA3B73C324251475F9274FF50476F7BE0">
+			<Item class="ModuleScript" referent="RBX455D0BA36D644AC7A043005F03445C5C">
 				<Properties>
 					<Content name="LinkedSource"><null></null></Content>
 					<ProtectedString name="Source"><![CDATA[local Kick = {}
@@ -2200,7 +2287,7 @@ return Kick]]></ProtectedString>
 					<SharedString name="Tags">yuZpQdnvvUBOTYh1jqZ2cA==</SharedString>
 				</Properties>
 			</Item>
-			<Item class="ModuleScript" referent="RBX2C8D8FB897424A2184C855DF86257A37">
+			<Item class="ModuleScript" referent="RBX5B81CEE3D3CC49D69A9B81509E7CCA2C">
 				<Properties>
 					<Content name="LinkedSource"><null></null></Content>
 					<ProtectedString name="Source"><![CDATA[local Notify = {}
@@ -2287,7 +2374,7 @@ return Notify]]></ProtectedString>
 					<SharedString name="Tags">yuZpQdnvvUBOTYh1jqZ2cA==</SharedString>
 				</Properties>
 			</Item>
-			<Item class="ModuleScript" referent="RBX159525DC61D64D068E7C2FE91209FD84">
+			<Item class="ModuleScript" referent="RBXAEC5EBE68AA54879BD650987DFC7545C">
 				<Properties>
 					<Content name="LinkedSource"><null></null></Content>
 					<ProtectedString name="Source"><![CDATA[local AntiFling = {}
@@ -2430,7 +2517,7 @@ return AntiFling]]></ProtectedString>
 				</Properties>
 			</Item>
 		</Item>
-		<Item class="Folder" referent="RBX8158EAD4C56545BEB7394197D2DF83FC">
+		<Item class="Folder" referent="RBXBAB36DA730754D2A839A9D3E5D7881E3">
 			<Properties>
 				<Color3 name="IconTint">
 					<R>0</R>
@@ -2444,7 +2531,7 @@ return AntiFling]]></ProtectedString>
 				<int64 name="SourceAssetId">-1</int64>
 				<SharedString name="Tags">yuZpQdnvvUBOTYh1jqZ2cA==</SharedString>
 			</Properties>
-			<Item class="LocalScript" referent="RBX50B2EC70B9ED44B684E42A41603576FF">
+			<Item class="LocalScript" referent="RBX4014455223B14F22B770171CAFAD1A75">
 				<Properties>
 					<ProtectedString name="Source"><![CDATA[if not game:IsLoaded() then
 	game.Loaded:Wait()
@@ -2620,7 +2707,7 @@ end)]]></ProtectedString>
 					<SharedString name="Tags">yuZpQdnvvUBOTYh1jqZ2cA==</SharedString>
 				</Properties>
 			</Item>
-			<Item class="LocalScript" referent="RBX37A57F94AAFB4E82A09CC8C8A0C7CDC4">
+			<Item class="LocalScript" referent="RBX84617081992A498BB659AAC3E54CAD51">
 				<Properties>
 					<ProtectedString name="Source"><![CDATA[local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
