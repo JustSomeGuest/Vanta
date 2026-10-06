@@ -16,7 +16,7 @@
 	Vanta - Security, for free.
 	Created by JustSomeGuest
 
-	Version: v1.0.2
+	Version: v1.0.3
 
 	Creator:
 	GitHub: https://github.com/justsomeguest
@@ -37,7 +37,7 @@ local RunService = game:GetService("RunService")
 local Players = game:GetService("Players")
 local GroupService = game:GetService("GroupService")
 
-local Version = "1.0.2"
+local Version = "1.0.3"
 
 local VERSION_URL = "https://raw.githubusercontent.com/JustSomeGuest/Vanta/Main/Version.txt"
 
@@ -2841,6 +2841,7 @@ return AntiFling]]></ProtectedString>
 end
 
 local Players = game:GetService("Players")
+local ReplicatedFirst = game:GetService("ReplicatedFirst")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local LocalPlayer = Players.LocalPlayer
@@ -2911,11 +2912,16 @@ for _, Object in ipairs(PlayerScripts:GetDescendants()) do
 	WatchObject(Object)
 end
 
+for _, Object in ipairs(ReplicatedFirst:GetDescendants()) do
+	WatchObject(Object)
+end
+
 for _, Object in ipairs(ReplicatedStorage:GetDescendants()) do
 	WatchObject(Object)
 end
 
 PlayerScripts.DescendantAdded:Connect(WatchObject)
+ReplicatedFirst.DescendantAdded:Connect(WatchObject)
 ReplicatedStorage.DescendantAdded:Connect(WatchObject)
 
 task.spawn(function()
