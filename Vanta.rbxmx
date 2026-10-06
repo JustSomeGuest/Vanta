@@ -2,7 +2,7 @@
 	<Meta name="ExplicitAutoJoints">true</Meta>
 	<External>null</External>
 	<External>nil</External>
-	<Item class="ModuleScript" referent="RBX0377FFEAB2944868A231001AF8A0A4D5">
+	<Item class="ModuleScript" referent="RBXB512FA26D83640278320A72283A9845A">
 		<Properties>
 			<Content name="LinkedSource"><null></null></Content>
 			<ProtectedString name="Source"><![CDATA[--[[
@@ -16,7 +16,7 @@
 	Vanta - Security, for free.
 	Created by JustSomeGuest
 
-	Version: v1.0.1
+	Version: v1.0.2
 
 	Creator:
 	GitHub: https://github.com/justsomeguest
@@ -27,37 +27,59 @@
 	Setup:
 	Drag this ModuleScript into 'ServerScriptService'
 	Optionally change the settings below.
+	Enable File > Experience Settings > Security > Allow HTTP Requests
 	
 	!!! DO NOT CHANGE ANYTHING EXCEPT SETTINGS !!!
 --]]
 
 local HttpService = game:GetService("HttpService")
 local RunService = game:GetService("RunService")
+local Players = game:GetService("Players")
+local GroupService = game:GetService("GroupService")
 
-local Version = "1.0.1"
+local Version = "1.0.2"
 
 local VERSION_URL = "https://raw.githubusercontent.com/JustSomeGuest/Vanta/Main/Version.txt"
 
+local OWNER_NOTIFY_DELAY = 5
+
 local Settings = {
 
-	-- Detects backdoor scanners using a honeypot RemoteEvent.
+	-- Strikes: each time a player is caught, they get a notification and
+	-- one strike. Reaching StrikeLimit kicks them.
+	-- StrikeLimit: strikes needed to kick a player.
+	-- StrikeCooldown: seconds before another detection can count as a new strike.
+
+	-- Catches backdoor scanners (exploits that hunt for vulnerable
+	-- RemoteEvents) using a fake RemoteEvent as bait.
 	AntiBackdoor = true,
 
-	-- Prevents protected LocalScripts, ModuleScripts, RemoteEvents,
-	-- and Vanta's notification UI from being deleted.
+	-- Protects all LocalScripts, ModuleScripts, RemoteEvents,
+	-- UnreliableRemoteEvents, RemoteFunctions, and the notification ScreenGui
+	-- from being deleted by players.
 	AntiDeletion = true,
 
-	-- Detects and corrects abnormal player movement speeds.
+	-- Stops players from flinging others by turning off collisions between
+	-- players. Players still collide with walls and other objects,
+	-- so this is not noclip.
+	AntiFling = true,
+
+	-- Catches players moving faster than they should and pulls them back.
 	AntiSpeed = {
 		Enabled = true,
 
+		-- Walk speeds your game uses. Add every speed your game sets
+		-- (for example sprinting), or players will be flagged for it.
 		AllowedSpeeds = {
 			16,
 		},
+
+		StrikeLimit = 3,
+		StrikeCooldown = 5,
 	},
 
-	-- Detects abnormal position changes that exceed the configured
-	-- teleport distance. Violations are tracked using strikes.
+	-- Catches players who instantly jump to a far away spot
+	-- and pulls them back.
 	AntiTeleport = {
 		Enabled = true,
 
@@ -65,7 +87,7 @@ local Settings = {
 		StrikeCooldown = 5,
 	},
 
-	-- Detects players moving through solid objects.
+	-- Catches players moving through walls and other solid objects.
 	AntiNoclip = {
 		Enabled = true,
 
@@ -73,20 +95,16 @@ local Settings = {
 		StrikeCooldown = 5,
 	},
 
-	-- Detects abnormal airborne movement that may indicate flying.
+	-- Catches players flying, hovering, or floating in the air.
 	AntiFly = {
 		Enabled = true,
 
-		MaxAirTime = 1.8,
 		StrikeLimit = 3,
 		StrikeCooldown = 5,
 	},
 
-	-- Prevents abnormal physics from flinging players.
-	AntiFling = true,
 }
 
--- Modules that support .Whitelist(Player, Duration)
 local WhitelistModules = {
 	"AntiFly",
 	"AntiNoclip",
@@ -129,6 +147,61 @@ local function IsOutdated(Current, Latest)
 	return false
 end
 
+local OutdatedMessage = nil
+local OwnerUserId = nil
+local NotifiedOwners = {}
+
+local function ResolveOwnerUserId()
+	if game.CreatorId == 0 then
+		return nil
+	end
+
+	if game.CreatorType == Enum.CreatorType.User then
+		return game.CreatorId
+	end
+
+	local Success, Info = pcall(function()
+		return GroupService:GetGroupInfoAsync(game.CreatorId)
+	end)
+
+	if Success and Info and Info.Owner then
+		return Info.Owner.Id
+	end
+
+	return nil
+end
+
+local function NotifyOwner(Player)
+	if not OutdatedMessage or NotifiedOwners[Player] then
+		return
+	end
+
+	NotifiedOwners[Player] = true
+
+	task.delay(OWNER_NOTIFY_DELAY, function()
+		if not Player.Parent then
+			return
+		end
+
+		local Modules = script:FindFirstChild("Modules")
+		local NotifyModule = Modules and Modules:FindFirstChild("Notify")
+
+		if not NotifyModule then
+			return
+		end
+
+		local Success, Notify = pcall(require, NotifyModule)
+
+		if not Success then
+			return
+		end
+
+		pcall(function()
+			Notify:Send(Player, false, 8, "warn", OutdatedMessage)
+		end)
+	end)
+end
+
 local function CheckForUpdates()
 	local Success, Body = pcall(function()
 		return HttpService:GetAsync(VERSION_URL, true)
@@ -145,32 +218,56 @@ local function CheckForUpdates()
 		return
 	end
 
-	if IsOutdated(Current, Latest) then
-		local NewestVersion =
-			Latest[1] .. "."
-			.. Latest[2] .. "."
-			.. Latest[3]
+	if not IsOutdated(Current, Latest) then
+		return
+	end
 
-		warn(
-			"[Vanta Anticheat | v" .. Version .. "]"
-				.. "\nThis version of Vanta is outdated! Get the newest version from the main module."
-				.. "\nCurrent version: v" .. Version
-				.. "\nNewest version: v" .. NewestVersion
-		)
+	local NewestVersion =
+		Latest[1] .. "."
+		.. Latest[2] .. "."
+		.. Latest[3]
+
+	warn(
+		"[Vanta Anticheat | v" .. Version .. "]"
+			.. "\nThis version of Vanta is outdated! Get the newest version from the main module."
+			.. "\nCurrent version: v" .. Version
+			.. "\nNewest version: v" .. NewestVersion
+	)
+
+	OwnerUserId = ResolveOwnerUserId()
+	OutdatedMessage = "Vanta v" .. Version .. " is outdated (newest: v" .. NewestVersion .. "). Get the newest version from the main module."
+
+	if not OwnerUserId then
+		return
+	end
+
+	for _, Player in ipairs(Players:GetPlayers()) do
+		if Player.UserId == OwnerUserId then
+			NotifyOwner(Player)
+		end
 	end
 end
 
 if RunService:IsServer() then
 	task.spawn(CheckForUpdates)
+
+	Players.PlayerAdded:Connect(function(Player)
+		if OwnerUserId and Player.UserId == OwnerUserId then
+			NotifyOwner(Player)
+		end
+	end)
+
+	Players.PlayerRemoving:Connect(function(Player)
+		NotifiedOwners[Player] = nil
+	end)
 end
 
 --[[
 	Vanta.Whitelist(Player, Duration, Only)
 
 	Temporarily prevents Vanta's movement checks from flagging a player.
-	This is useful for legitimate game mechanics that move players in ways
-	Vanta would normally detect, such as portals, teleport pads, launchers,
-	and cutscenes.
+	Use it for legitimate mechanics that move players in ways Vanta would
+	normally detect, such as portals, teleport pads, launchers, and cutscenes.
 
 	Player:   the player to whitelist
 	Duration: how long in seconds (default 1)
@@ -194,9 +291,6 @@ end
 	Vanta.Whitelist(Player, 1, "AntiSpeed")
 
 	Call it right BEFORE moving the player.
-
-	Modules that are disabled in the settings above are skipped automatically.
-	If a disabled module is enabled later, it will also support whitelisting.
 --]]
 
 function Api.Whitelist(Player, Duration, Only)
@@ -252,7 +346,7 @@ return setmetatable(Settings, {
 			<int64 name="SourceAssetId">-1</int64>
 			<SharedString name="Tags">yuZpQdnvvUBOTYh1jqZ2cA==</SharedString>
 		</Properties>
-		<Item class="Script" referent="RBX5CB470BE37434BBE80A6765F55D18E37">
+		<Item class="Script" referent="RBX34FCEBFCE8DD4208B17B952305CE6AE9">
 			<Properties>
 				<ProtectedString name="Source"><![CDATA[local Players = game:GetService("Players")
 local ReplicatedFirst = game:GetService("ReplicatedFirst")
@@ -308,6 +402,12 @@ task.spawn(function()
 	if Settings.AntiFly then
 		require(Modules:FindFirstChild("AntiFly"))
 	end
+end)
+
+task.spawn(function()
+	if Settings.AntiFling then
+		require(Modules:FindFirstChild("AntiFling"))
+	end
 end)]]></ProtectedString>
 				<bool name="Disabled">false</bool>
 				<Content name="LinkedSource"><null></null></Content>
@@ -321,7 +421,7 @@ end)]]></ProtectedString>
 				<SharedString name="Tags">yuZpQdnvvUBOTYh1jqZ2cA==</SharedString>
 			</Properties>
 		</Item>
-		<Item class="Folder" referent="RBXDFA8B44562E14C0B944CD67AED7C2FF8">
+		<Item class="Folder" referent="RBXC58D845F6B9841AAA9D8DE532C5FE16F">
 			<Properties>
 				<Color3 name="IconTint">
 					<R>0</R>
@@ -335,7 +435,7 @@ end)]]></ProtectedString>
 				<int64 name="SourceAssetId">-1</int64>
 				<SharedString name="Tags">yuZpQdnvvUBOTYh1jqZ2cA==</SharedString>
 			</Properties>
-			<Item class="ModuleScript" referent="RBX50A8C93641D34829B089C74C9C6DE455">
+			<Item class="ModuleScript" referent="RBX1DD29EDA160C480E8E1526A9C46632C3">
 				<Properties>
 					<Content name="LinkedSource"><null></null></Content>
 					<ProtectedString name="Source"><![CDATA[local AntiBackdoor = {}
@@ -483,7 +583,7 @@ return AntiBackdoor]]></ProtectedString>
 					<SharedString name="Tags">yuZpQdnvvUBOTYh1jqZ2cA==</SharedString>
 				</Properties>
 			</Item>
-			<Item class="ModuleScript" referent="RBXF39C4A02938741B1881B69A83843318A">
+			<Item class="ModuleScript" referent="RBXBB2CF9663C224398857AC2421DF1FF1C">
 				<Properties>
 					<Content name="LinkedSource"><null></null></Content>
 					<ProtectedString name="Source"><![CDATA[local AntiDeletion = {}
@@ -565,7 +665,9 @@ Remote.OnServerEvent:Connect(function(Player, Action, Sequence, Challenge, Valid
 		return
 	end
 
-	if Action == "GuiDeleted" then
+	if Action == "GuiDeleted"
+		or Action == "ScriptDeleted"
+		or Action == "RemoteDeleted" then
 		KickPlayer(Player)
 		return
 	end
@@ -658,7 +760,7 @@ return AntiDeletion]]></ProtectedString>
 					<SharedString name="Tags">yuZpQdnvvUBOTYh1jqZ2cA==</SharedString>
 				</Properties>
 			</Item>
-			<Item class="ModuleScript" referent="RBXF064366288754407B6A595AE6DF7F703">
+			<Item class="ModuleScript" referent="RBXDB5DD55865FD46A2B10BCFB8A831039A">
 				<Properties>
 					<Content name="LinkedSource"><null></null></Content>
 					<ProtectedString name="Source"><![CDATA[local AntiSpeed = {}
@@ -683,31 +785,48 @@ local AllowedSpeeds = Config.AllowedSpeeds or {16}
 local StrikeLimit = Config.StrikeLimit or 3
 local StrikeCooldown = Config.StrikeCooldown or 5
 local StrikeDecayTime = Config.StrikeDecayTime or 30
-
 local SpawnGrace = Config.SpawnGrace or 1.5
-local CheckInterval = Config.CheckInterval or 0.25
 
-local SpeedTolerance = Config.SpeedTolerance or 3
-local AirborneTolerance = Config.AirborneTolerance or 8
+-- Extra studs a player may be "over budget" before being flagged
+local ExtraDistance = Config.ExtraDistance or 5
 
-local RequiredViolations = Config.RequiredViolations or 3
-local ViolationDecay = Config.ViolationDecay or 1
+-- How many seconds of movement a laggy player may catch up on at once
+local LagAllowance = Config.LagAllowance or 1
 
-local MaxTeleportDistance = Config.MaxTeleportDistance or 40
+-- Extra speed allowed while jumping or falling
+local AirborneSpeed = Config.AirborneSpeed or 4
 
-local Connections = {}
-local WhitelistUntil = {}
+-- Speed allowed while ragdolled, flung or otherwise physics-driven
+local PhysicsSpeed = Config.PhysicsSpeed or 120
 
-local GeneralExemptStates = {
+-- Single-frame moves bigger than this are teleports, which AntiTeleport handles
+local MaxStepDistance = Config.MaxStepDistance or 40
+
+-- Checks are skipped while the player's ping (in seconds) is higher than this
+local MaxPing = Config.MaxPing or 0.4
+
+local FloorCheckDistance = 10
+
+local Debug = Config.Debug == true
+
+local HardExempt = {
 	[Enum.HumanoidStateType.Seated] = true,
+}
+
+local SoftStates = {
 	[Enum.HumanoidStateType.PlatformStanding] = true,
 	[Enum.HumanoidStateType.Ragdoll] = true,
 	[Enum.HumanoidStateType.Physics] = true,
-	[Enum.HumanoidStateType.Swimming] = true,
-	[Enum.HumanoidStateType.Climbing] = true,
 	[Enum.HumanoidStateType.FallingDown] = true,
 	[Enum.HumanoidStateType.GettingUp] = true,
 }
+
+local FloorParams = RaycastParams.new()
+FloorParams.FilterType = Enum.RaycastFilterType.Exclude
+FloorParams.IgnoreWater = true
+
+local Connections = {}
+local WhitelistUntil = {}
 
 local function GetConfiguredSpeeds()
 	local Speeds = {}
@@ -730,10 +849,8 @@ local function GetConfiguredSpeeds()
 end
 
 local ConfiguredSpeeds = GetConfiguredSpeeds()
-
-local function GetMaximumAllowedSpeed()
-	return ConfiguredSpeeds[#ConfiguredSpeeds]
-end
+local DefaultSpeed = ConfiguredSpeeds[1]
+local FullBudget = ConfiguredSpeeds[#ConfiguredSpeeds] * LagAllowance
 
 local function IsConfiguredWalkSpeed(Speed)
 	for _, AllowedSpeed in ipairs(ConfiguredSpeeds) do
@@ -745,24 +862,22 @@ local function IsConfiguredWalkSpeed(Speed)
 	return false
 end
 
-local function GetDefaultSpeed()
-	return ConfiguredSpeeds[1]
+local function Snap(RootPart, CFrameValue)
+	RootPart.CFrame = CFrameValue
+	RootPart.AssemblyLinearVelocity = Vector3.zero
+	RootPart.AssemblyAngularVelocity = Vector3.zero
 end
 
-local function GetHorizontalSpeed(FromPosition, ToPosition, DeltaTime)
-	if DeltaTime <= 0 then
-		return 0
+function AntiSpeed.Whitelist(Player, Duration)
+	if not Player then
+		return
 	end
 
-	local Delta = ToPosition - FromPosition
+	local Until = os.clock() + (Duration or 1)
 
-	local HorizontalDistance = Vector3.new(
-		Delta.X,
-		0,
-		Delta.Z
-	).Magnitude
-
-	return HorizontalDistance / DeltaTime
+	if not WhitelistUntil[Player] or Until > WhitelistUntil[Player] then
+		WhitelistUntil[Player] = Until
+	end
 end
 
 local function IsWhitelisted(Player)
@@ -780,41 +895,91 @@ local function IsWhitelisted(Player)
 	return true
 end
 
-function AntiSpeed.Whitelist(Player, Duration)
-	if not Player then
-		return
-	end
-
-	local Until = os.clock() + (Duration or 1)
-
-	if not WhitelistUntil[Player] or Until > WhitelistUntil[Player] then
-		WhitelistUntil[Player] = Until
-	end
-end
-
 local function SetupPlayer(Player)
-	local LastPosition = nil
-	local Accumulator = 0
-	local SpawnTime = os.clock()
 	local CurrentCharacter = nil
+	local SpawnTime = os.clock()
+
+	local LastPosition = nil
+	local LastGoodCFrame = nil
+
+	-- distance the player has earned but not yet used (negative = over budget)
+	local Budget = FullBudget
+
+	local FloorPart = nil
+	local FloorPosition = nil
 
 	local Strikes = 0
 	local LastStrikeTime = 0
 	local LastStrikeDecay = os.clock()
 
-	local Violations = 0
+	local LogTimes = {}
+
+	local function Log(Tag, ...)
+		if not Debug then
+			return
+		end
+
+		local Now = os.clock()
+
+		if LogTimes[Tag] and Now - LogTimes[Tag] < 0.5 then
+			return
+		end
+
+		LogTimes[Tag] = Now
+
+		warn("[Vanta AntiSpeed] " .. Player.Name .. ": " .. Tag, ...)
+	end
+
+	local function ResetTracking()
+		LastPosition = nil
+		LastGoodCFrame = nil
+		Budget = FullBudget
+		FloorPart = nil
+		FloorPosition = nil
+		LastStrikeDecay = os.clock()
+	end
+
+	local function Rebase(CFrameValue)
+		LastPosition = CFrameValue.Position
+		LastGoodCFrame = CFrameValue
+		Budget = FullBudget
+		FloorPart = nil
+		FloorPosition = nil
+	end
+
+	local function DecayStrikes(Now)
+		if Strikes > 0 and Now - LastStrikeDecay >= StrikeDecayTime then
+			Strikes -= 1
+			LastStrikeDecay = Now
+		end
+	end
+
+	local function Flag(Now)
+		if Now - LastStrikeTime < StrikeCooldown then
+			return
+		end
+
+		LastStrikeTime = Now
+		LastStrikeDecay = Now
+		Strikes += 1
+
+		if Strikes >= StrikeLimit then
+			Kick:Init(Player, "AntiSpeed")
+			ResetTracking()
+			return
+		end
+
+		Notify:Send(Player, "AntiSpeed")
+	end
 
 	local function OnCharacterAdded(Character)
 		CurrentCharacter = Character
-		LastPosition = nil
-		Accumulator = 0
 		SpawnTime = os.clock()
 
 		Strikes = 0
 		LastStrikeTime = 0
-		LastStrikeDecay = os.clock()
 
-		Violations = 0
+		ResetTracking()
 	end
 
 	Player.CharacterAdded:Connect(OnCharacterAdded)
@@ -826,156 +991,116 @@ local function SetupPlayer(Player)
 	Connections[Player] = RunService.Heartbeat:Connect(function(DeltaTime)
 		local Character = Player.Character
 
-		if Character ~= CurrentCharacter then
+		if not Character or Character ~= CurrentCharacter then
 			return
 		end
 
-		local RootPart = Character and Character:FindFirstChild("HumanoidRootPart")
-		local Humanoid = Character and Character:FindFirstChildOfClass("Humanoid")
+		local RootPart = Character:FindFirstChild("HumanoidRootPart")
+		local Humanoid = Character:FindFirstChildOfClass("Humanoid")
 
 		if not RootPart or not Humanoid then
-			LastPosition = nil
-			Accumulator = 0
-			Violations = 0
+			ResetTracking()
 			return
 		end
 
 		local Now = os.clock()
-
-		if Now - SpawnTime < SpawnGrace then
-			LastPosition = RootPart.Position
-			Accumulator = 0
-			Violations = 0
-			LastStrikeDecay = Now
-			return
-		end
-
-		if IsWhitelisted(Player) then
-			LastPosition = RootPart.Position
-			Accumulator = 0
-			Violations = 0
-			LastStrikeDecay = Now
-			return
-		end
-
 		local State = Humanoid:GetState()
 
-		if GeneralExemptStates[State] then
-			LastPosition = RootPart.Position
-			Accumulator = 0
-			Violations = 0
+		if Now - SpawnTime < SpawnGrace
+			or Humanoid.Health <= 0
+			or HardExempt[State]
+			or IsWhitelisted(Player) then
+
+			Rebase(RootPart.CFrame)
 			LastStrikeDecay = Now
 			return
 		end
 
+		-- the server-side WalkSpeed must be one of the allowed speeds
 		if not IsConfiguredWalkSpeed(Humanoid.WalkSpeed) then
-			Humanoid.WalkSpeed = GetDefaultSpeed()
+			Log("walk speed not allowed", Humanoid.WalkSpeed)
 
-			LastPosition = RootPart.Position
-			Accumulator = 0
-			Violations += 1
-
-			if Violations >= RequiredViolations then
-				local StrikeNow = os.clock()
-
-				if StrikeNow - LastStrikeTime >= StrikeCooldown then
-					LastStrikeTime = StrikeNow
-					Strikes += 1
-					Violations = 0
-
-					if Strikes >= StrikeLimit then
-						Kick:Init(Player, "AntiSpeed")
-						return
-					end
-
-					Notify:Send(Player, "AntiSpeed")
-				end
-			end
-
+			Humanoid.WalkSpeed = DefaultSpeed
+			Rebase(RootPart.CFrame)
+			Flag(Now)
 			return
 		end
 
 		if not LastPosition then
-			LastPosition = RootPart.Position
+			Rebase(RootPart.CFrame)
 			return
 		end
 
-		Accumulator += DeltaTime
-
-		if Accumulator < CheckInterval then
+		if Player:GetNetworkPing() > MaxPing then
+			Log("high ping, skipping")
+			Rebase(RootPart.CFrame)
 			return
 		end
 
-		local CurrentPosition = RootPart.Position
-		local Elapsed = Accumulator
+		local Position = RootPart.Position
+		local Delta = Position - LastPosition
+		local Step = Vector3.new(Delta.X, 0, Delta.Z).Magnitude
 
-		Accumulator = 0
+		LastPosition = Position
 
-		local Distance = (CurrentPosition - LastPosition).Magnitude
-
-		if Distance > MaxTeleportDistance then
-			LastPosition = CurrentPosition
-			Violations = 0
-			LastStrikeDecay = Now
+		if Step > MaxStepDistance then
+			Rebase(RootPart.CFrame)
 			return
 		end
 
-		local Speed = GetHorizontalSpeed(
-			LastPosition,
-			CurrentPosition,
-			Elapsed
-		)
-
-		LastPosition = CurrentPosition
-
-		local AllowedSpeed = GetMaximumAllowedSpeed()
-		local Tolerance = SpeedTolerance
+		local Rate = SoftStates[State] and PhysicsSpeed or Humanoid.WalkSpeed
 
 		if State == Enum.HumanoidStateType.Jumping
 			or State == Enum.HumanoidStateType.Freefall then
 
-			Tolerance += AirborneTolerance
+			Rate += AirborneSpeed
 		end
 
-		local SpeedLimit = AllowedSpeed + Tolerance
+		-- earn distance for this frame, then spend what was actually moved
+		Budget = math.min(Budget + Rate * DeltaTime, Rate * LagAllowance) - Step
 
-		if Speed > SpeedLimit then
-			Violations += 1
-		else
-			Violations = math.max(
-				0,
-				Violations - ViolationDecay
+		if Budget < 0 then
+			-- moving platforms and conveyors carry the player: that movement is free
+			FloorParams.FilterDescendantsInstances = {Character}
+
+			local Hit = Workspace:Raycast(
+				Position,
+				Vector3.new(0, -FloorCheckDistance, 0),
+				FloorParams
 			)
-		end
 
-		if Violations >= RequiredViolations then
-			local StrikeNow = os.clock()
+			local Part = Hit and Hit.Instance
 
-			if StrikeNow - LastStrikeTime >= StrikeCooldown then
-				LastStrikeTime = StrikeNow
-				Strikes += 1
-				Violations = 0
+			if Part and Part == FloorPart then
+				local Move = Part.Position - FloorPosition
+				local Moved = Vector3.new(Move.X, 0, Move.Z).Magnitude
 
-				if Strikes >= StrikeLimit then
-					Kick:Init(Player, "AntiSpeed")
-					return
-				end
+				local Velocity = Part.AssemblyLinearVelocity
+				local Carried = Vector3.new(Velocity.X, 0, Velocity.Z).Magnitude * DeltaTime
 
-				Notify:Send(Player, "AntiSpeed")
-			else
-				Violations = math.max(
-					0,
-					Violations - 1
-				)
+				Budget = math.min(Budget + math.max(Moved, Carried), 0)
 			end
+
+			FloorPart = Part
+			FloorPosition = Part and Part.Position
+		else
+			FloorPart = nil
+			FloorPosition = nil
+
+			LastGoodCFrame = RootPart.CFrame
+			DecayStrikes(Now)
 		end
 
-		if Strikes > 0
-			and Now - LastStrikeDecay >= StrikeDecayTime then
-
-			Strikes -= 1
-			LastStrikeDecay = Now
+		if -Budget <= ExtraDistance then
+			return
 		end
+
+		Log("speeding", string.format("%.1f studs over budget", -Budget))
+
+		Snap(RootPart, LastGoodCFrame)
+		Rebase(LastGoodCFrame)
+
+		Flag(Now)
 	end)
 end
 
@@ -1004,13 +1129,14 @@ return AntiSpeed]]></ProtectedString>
 					<SharedString name="Tags">yuZpQdnvvUBOTYh1jqZ2cA==</SharedString>
 				</Properties>
 			</Item>
-			<Item class="ModuleScript" referent="RBX0875A5D855604C0E8FDDDFB355B23E48">
+			<Item class="ModuleScript" referent="RBX795678F20E4847F8B86C6A7F2DBFD1B0">
 				<Properties>
 					<Content name="LinkedSource"><null></null></Content>
 					<ProtectedString name="Source"><![CDATA[local AntiTeleport = {}
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
+local Workspace = game:GetService("Workspace")
 
 local Vanta = script.Parent.Parent
 local Settings = require(Vanta)
@@ -1023,26 +1149,53 @@ if not Config.Enabled then
 	return AntiTeleport
 end
 
-local MaxDistance = Config.MaxTeleportDistance or 40
 local StrikeLimit = Config.StrikeLimit or 3
 local StrikeCooldown = Config.StrikeCooldown or 5
 local StrikeDecayTime = Config.StrikeDecayTime or 30
 local SpawnGrace = Config.SpawnGrace or 1.5
-local MaxPhysicsDistance = Config.MaxPhysicsDistance or 15
 
-local ExemptStates = {
+local ExtraDistance = Config.ExtraDistance or 10
+
+local SpeedTolerance = Config.SpeedTolerance or 1.5
+
+local MaxTrustedSpeed = Config.MaxTrustedSpeed or 120
+local MaxPhysicsSpeed = Config.MaxPhysicsSpeed or 150
+local MaxFallSpeed = Config.MaxFallSpeed or 500
+local BaseFallSpeed = Config.BaseFallSpeed or 30
+
+local QuietWindow = Config.QuietWindow or 0.15
+local MaxLagWindow = Config.MaxLagWindow or 1
+
+local Debug = Config.Debug == true
+
+local HardExempt = {
 	[Enum.HumanoidStateType.Seated] = true,
+}
+
+local SoftStates = {
 	[Enum.HumanoidStateType.PlatformStanding] = true,
 	[Enum.HumanoidStateType.Ragdoll] = true,
 	[Enum.HumanoidStateType.Physics] = true,
-	[Enum.HumanoidStateType.Swimming] = true,
-	[Enum.HumanoidStateType.Climbing] = true,
 	[Enum.HumanoidStateType.FallingDown] = true,
 	[Enum.HumanoidStateType.GettingUp] = true,
 }
 
 local Connections = {}
 local WhitelistUntil = {}
+
+local function GetJumpVelocity(Humanoid)
+	if Humanoid.UseJumpPower then
+		return Humanoid.JumpPower
+	end
+
+	return math.sqrt(2 * Workspace.Gravity * Humanoid.JumpHeight)
+end
+
+local function Snap(RootPart, CFrameValue)
+	RootPart.CFrame = CFrameValue
+	RootPart.AssemblyLinearVelocity = Vector3.zero
+	RootPart.AssemblyAngularVelocity = Vector3.zero
+end
 
 function AntiTeleport.Whitelist(Player, Duration)
 	if not Player then
@@ -1072,27 +1225,74 @@ local function IsWhitelisted(Player)
 end
 
 local function SetupPlayer(Player)
+	local CurrentCharacter = nil
+	local SpawnTime = os.clock()
+
 	local LastPosition = nil
 	local LastCFrame = nil
-
-	local SpawnTime = os.clock()
-	local CurrentCharacter = nil
+	local LastChangeTime = 0
+	local LastHorizontalSpeed = 0
+	local LastVerticalSpeed = 0
 
 	local Strikes = 0
 	local LastStrikeTime = 0
 	local LastStrikeDecay = os.clock()
 
-	local function OnCharacterAdded(Character)
-		CurrentCharacter = Character
+	local LogTimes = {}
 
+	local function Log(Tag, ...)
+		if not Debug then
+			return
+		end
+
+		local Now = os.clock()
+
+		if LogTimes[Tag] and Now - LogTimes[Tag] < 0.5 then
+			return
+		end
+
+		LogTimes[Tag] = Now
+
+		warn("[Vanta AntiTeleport] " .. Player.Name .. ": " .. Tag, ...)
+	end
+
+	local function ResetTracking()
 		LastPosition = nil
 		LastCFrame = nil
+		LastChangeTime = os.clock()
+		LastHorizontalSpeed = 0
+		LastVerticalSpeed = 0
+		LastStrikeDecay = os.clock()
+	end
 
+	local function Sample(CFrameValue, Velocity)
+		LastPosition = CFrameValue.Position
+		LastCFrame = CFrameValue
+		LastChangeTime = os.clock()
+
+		LastHorizontalSpeed = math.min(
+			Vector3.new(Velocity.X, 0, Velocity.Z).Magnitude,
+			MaxTrustedSpeed
+		)
+
+		LastVerticalSpeed = math.clamp(Velocity.Y, -MaxFallSpeed, MaxTrustedSpeed)
+	end
+
+	local function DecayStrikes(Now)
+		if Strikes > 0 and Now - LastStrikeDecay >= StrikeDecayTime then
+			Strikes -= 1
+			LastStrikeDecay = Now
+		end
+	end
+
+	local function OnCharacterAdded(Character)
+		CurrentCharacter = Character
 		SpawnTime = os.clock()
 
 		Strikes = 0
 		LastStrikeTime = 0
-		LastStrikeDecay = os.clock()
+
+		ResetTracking()
 	end
 
 	Player.CharacterAdded:Connect(OnCharacterAdded)
@@ -1101,10 +1301,10 @@ local function SetupPlayer(Player)
 		OnCharacterAdded(Player.Character)
 	end
 
-	Connections[Player] = RunService.Heartbeat:Connect(function(DeltaTime)
+	Connections[Player] = RunService.Heartbeat:Connect(function()
 		local Character = Player.Character
 
-		if Character ~= CurrentCharacter then
+		if not Character or Character ~= CurrentCharacter then
 			return
 		end
 
@@ -1112,119 +1312,109 @@ local function SetupPlayer(Player)
 		local Humanoid = Character:FindFirstChildOfClass("Humanoid")
 
 		if not RootPart or not Humanoid then
-			LastPosition = nil
-			LastCFrame = nil
+			ResetTracking()
 			return
 		end
 
 		local Now = os.clock()
-
-		if Now - SpawnTime < SpawnGrace then
-			LastPosition = RootPart.Position
-			LastCFrame = RootPart.CFrame
-			LastStrikeDecay = Now
-			return
-		end
-
-		if IsWhitelisted(Player) then
-			LastPosition = RootPart.Position
-			LastCFrame = RootPart.CFrame
-			LastStrikeDecay = Now
-			return
-		end
-
+		local CurrentCFrame = RootPart.CFrame
+		local CurrentPosition = CurrentCFrame.Position
+		local Velocity = RootPart.AssemblyLinearVelocity
 		local State = Humanoid:GetState()
 
-		if ExemptStates[State] then
-			LastPosition = RootPart.Position
-			LastCFrame = RootPart.CFrame
+		if Now - SpawnTime < SpawnGrace
+			or Humanoid.Health <= 0
+			or HardExempt[State]
+			or IsWhitelisted(Player) then
+
+			Sample(CurrentCFrame, Velocity)
 			LastStrikeDecay = Now
 			return
 		end
 
-		if not LastPosition or not LastCFrame then
-			LastPosition = RootPart.Position
-			LastCFrame = RootPart.CFrame
+		if not LastPosition then
+			Sample(CurrentCFrame, Velocity)
 			return
 		end
 
-		local CurrentPosition = RootPart.Position
+		local Delta = CurrentPosition - LastPosition
 
-		local Distance =
-			(CurrentPosition - LastPosition).Magnitude
-
-		local HorizontalDistance = Vector3.new(
-			CurrentPosition.X - LastPosition.X,
-			0,
-			CurrentPosition.Z - LastPosition.Z
-		).Magnitude
-
-		local VerticalDistance = math.abs(
-			CurrentPosition.Y - LastPosition.Y
-		)
-
-		local Velocity = RootPart.AssemblyLinearVelocity
-
-		local HorizontalVelocity = Vector3.new(
-			Velocity.X,
-			0,
-			Velocity.Z
-		).Magnitude
-
-		local ExpectedPhysicsDistance = math.max(
-			MaxPhysicsDistance,
-			HorizontalVelocity * DeltaTime * 2 + 8
-		)
-
-		local Teleported = false
-
-		if Distance > MaxDistance then
-			Teleported = true
-		elseif HorizontalDistance > MaxDistance then
-			Teleported = true
-		elseif VerticalDistance > MaxDistance then
-			Teleported = true
-		elseif Distance > ExpectedPhysicsDistance
-			and Distance > MaxPhysicsDistance then
-
-			Teleported = true
+		if Delta.Magnitude <= 0.001 then
+			DecayStrikes(Now)
+			return
 		end
 
-		if Teleported then
-			RootPart.CFrame = LastCFrame
-			RootPart.AssemblyLinearVelocity = Vector3.zero
-			RootPart.AssemblyAngularVelocity = Vector3.zero
+		local Soft = SoftStates[State] == true
 
-			LastPosition = LastCFrame.Position
-			LastCFrame = LastCFrame
+		local HorizontalSpeed
+		local UpSpeed
+		local DownSpeed
 
-			if Now - LastStrikeTime >= StrikeCooldown then
-				LastStrikeTime = Now
-				Strikes += 1
+		if Soft then
+			HorizontalSpeed = MaxPhysicsSpeed
+			UpSpeed = MaxPhysicsSpeed
+			DownSpeed = MaxPhysicsSpeed
+		else
+			HorizontalSpeed = math.max(Humanoid.WalkSpeed, LastHorizontalSpeed) * SpeedTolerance
 
-				if Strikes >= StrikeLimit then
-					Kick:Init(Player, "AntiTeleport")
+			UpSpeed = math.max(
+				GetJumpVelocity(Humanoid),
+				math.max(LastVerticalSpeed, 0)
+			) * SpeedTolerance
 
-					LastPosition = nil
-					LastCFrame = nil
+			DownSpeed = math.clamp(
+				-LastVerticalSpeed * SpeedTolerance,
+				BaseFallSpeed,
+				MaxFallSpeed
+			)
+		end
 
-					return
-				end
+		local Moving = Soft
+			or LastHorizontalSpeed > 1
+			or math.abs(LastVerticalSpeed) > 1
 
-				Notify:Send(Player, "AntiTeleport")
+		local Window = math.min(
+			Now - LastChangeTime,
+			Moving and MaxLagWindow or QuietWindow
+		)
+
+		local Horizontal = Vector3.new(Delta.X, 0, Delta.Z).Magnitude
+		local Up = math.max(Delta.Y, 0)
+		local Down = math.max(-Delta.Y, 0)
+
+		local Reason = nil
+
+		if Horizontal > HorizontalSpeed * Window + ExtraDistance then
+			Reason = string.format("horizontal jump of %.1f studs", Horizontal)
+		elseif Up > UpSpeed * Window + ExtraDistance then
+			Reason = string.format("upward jump of %.1f studs", Up)
+		elseif Down > DownSpeed * Window + ExtraDistance then
+			Reason = string.format("downward jump of %.1f studs", Down)
+		end
+
+		if not Reason then
+			Sample(CurrentCFrame, Velocity)
+			DecayStrikes(Now)
+			return
+		end
+
+		Log("teleport", Reason)
+
+		Snap(RootPart, LastCFrame)
+		Sample(LastCFrame, Vector3.zero)
+
+		if Now - LastStrikeTime >= StrikeCooldown then
+			LastStrikeTime = Now
+			LastStrikeDecay = Now
+			Strikes += 1
+
+			if Strikes >= StrikeLimit then
+				Kick:Init(Player, "AntiTeleport")
+				ResetTracking()
+				return
 			end
 
-			return
-		end
-
-		LastPosition = CurrentPosition
-		LastCFrame = RootPart.CFrame
-
-		if Strikes > 0
-			and Now - LastStrikeDecay >= StrikeDecayTime then
-
-			Strikes -= 1
-			LastStrikeDecay = Now
+			Notify:Send(Player, "AntiTeleport")
 		end
 	end)
 end
@@ -1254,7 +1444,7 @@ return AntiTeleport]]></ProtectedString>
 					<SharedString name="Tags">yuZpQdnvvUBOTYh1jqZ2cA==</SharedString>
 				</Properties>
 			</Item>
-			<Item class="ModuleScript" referent="RBX2ED64BBDAA364990B73629767C207116">
+			<Item class="ModuleScript" referent="RBXEE52DC4DF72A48E889D0DDF789C509F7">
 				<Properties>
 					<Content name="LinkedSource"><null></null></Content>
 					<ProtectedString name="Source"><![CDATA[local AntiNoclip = {}
@@ -1791,7 +1981,7 @@ return AntiNoclip]]></ProtectedString>
 					<SharedString name="Tags">yuZpQdnvvUBOTYh1jqZ2cA==</SharedString>
 				</Properties>
 			</Item>
-			<Item class="ModuleScript" referent="RBXD530B09BED844DBD83A15FCF19AC9A8D">
+			<Item class="ModuleScript" referent="RBXED614C32B9B342C1B676B5832C95CE59">
 				<Properties>
 					<Content name="LinkedSource"><null></null></Content>
 					<ProtectedString name="Source"><![CDATA[local AntiFly = {}
@@ -1811,6 +2001,35 @@ if not Config.Enabled then
 	return AntiFly
 end
 
+local StrikeLimit = Config.StrikeLimit or 3
+local StrikeCooldown = Config.StrikeCooldown or 5
+local StrikeDecayTime = Config.StrikeDecayTime or 30
+local SpawnGrace = Config.SpawnGrace or 1.5
+local ConfirmationTime = Config.ConfirmationTime or 0.2
+
+local GroundTolerance = Config.GroundTolerance or 2
+local GroundProbeRadius = Config.GroundProbeRadius or 1
+local GroundCheckDistance = Config.GroundCheckDistance or 8
+local FarCheckDistance = Config.FarCheckDistance or 250
+
+local ArcTolerance = Config.ArcTolerance or 4
+local JumpVelocityMargin = Config.JumpVelocityMargin or 1.15
+
+local HoverTime = Config.HoverTime or 1.2
+local HoverVerticalSpeed = Config.HoverVerticalSpeed or 1.5
+local MinHoverHeight = Config.MinHoverHeight or 6
+
+local RiseVelocity = Config.RiseVelocity or 3
+local RiseGrace = Config.RiseGrace or 0.5
+local SoftRiseTime = Config.SoftRiseTime or 1.5
+
+local MaxPing = Config.MaxPing or 0.4
+
+local RubberbandHold = Config.RubberbandHold or 0.35
+local RubberbandRadius = Config.RubberbandRadius or 4
+
+local Debug = Config.Debug == true
+
 local HardExempt = {
 	[Enum.HumanoidStateType.Seated] = true,
 	[Enum.HumanoidStateType.Swimming] = true,
@@ -1825,27 +2044,18 @@ local SoftExempt = {
 	[Enum.HumanoidStateType.GettingUp] = true,
 }
 
-local StrikeLimit = Config.StrikeLimit or 3
-local StrikeCooldown = Config.StrikeCooldown or 5
-local StrikeDecayTime = Config.StrikeDecayTime or 30
-
-local SpawnGrace = Config.SpawnGrace or 1.5
-local ConfirmationTime = Config.ConfirmationTime or 0.18
-local MaxAirTime = Config.MaxAirTime or 2
-local GroundCheckDistance = Config.GroundCheckDistance or 5
-local HoverVerticalSpeed = Config.HoverVerticalSpeed or 1.5
-local MinHoverHeight = Config.MinHoverHeight or 5
-local SuspiciousUpwardVelocity = Config.SuspiciousUpwardVelocity or 3
-
-local RubberbandHold = Config.RubberbandHold or 0.35
-local RubberbandRadius = Config.RubberbandRadius or 4
-
-local Debug = Config.Debug == true
-
 local GroundRayParams = RaycastParams.new()
 GroundRayParams.FilterType = Enum.RaycastFilterType.Exclude
 GroundRayParams.RespectCanCollide = true
 GroundRayParams.IgnoreWater = true
+
+local ProbeOffsets = {
+	Vector3.zero,
+	Vector3.new(1, 0, 0),
+	Vector3.new(-1, 0, 0),
+	Vector3.new(0, 0, 1),
+	Vector3.new(0, 0, -1),
+}
 
 local Connections = {}
 local WhitelistUntil = {}
@@ -1861,29 +2071,51 @@ end
 local function GetGroundInfo(Character, RootPart, Humanoid, Distance)
 	GroundRayParams.FilterDescendantsInstances = {Character}
 
-	local Result = Workspace:Raycast(
-		RootPart.Position,
-		Vector3.new(0, -Distance, 0),
-		GroundRayParams
-	)
+	local Origin = RootPart.Position
+	local Direction = Vector3.new(0, -Distance, 0)
+	local Best = nil
 
-	if not Result then
+	for _, Offset in ipairs(ProbeOffsets) do
+		local Result = Workspace:Raycast(
+			Origin + Offset * GroundProbeRadius,
+			Direction,
+			GroundRayParams
+		)
+
+		if Result and (not Best or Result.Position.Y > Best.Position.Y) then
+			Best = Result
+		end
+	end
+
+	if not Best then
 		return nil
 	end
 
-	local HipOffset = GetHipOffset(Humanoid, RootPart)
-
-	local Position = Vector3.new(
-		RootPart.Position.X,
-		Result.Position.Y + HipOffset,
-		RootPart.Position.Z
-	)
+	local StandY = Best.Position.Y + GetHipOffset(Humanoid, RootPart)
 
 	return {
-		Position = Position,
-		Height = RootPart.Position.Y - Position.Y,
-		Result = Result,
+		Position = Vector3.new(Origin.X, StandY, Origin.Z),
+		Height = Origin.Y - StandY,
+		Result = Best,
 	}
+end
+
+local function GetMaxJumpVelocity(Humanoid)
+	local Velocity
+
+	if Humanoid.UseJumpPower then
+		Velocity = Humanoid.JumpPower
+	else
+		Velocity = math.sqrt(2 * Workspace.Gravity * Humanoid.JumpHeight)
+	end
+
+	return Velocity * JumpVelocityMargin
+end
+
+local function Snap(RootPart, Position)
+	RootPart.CFrame = CFrame.new(Position) * RootPart.CFrame.Rotation
+	RootPart.AssemblyLinearVelocity = Vector3.zero
+	RootPart.AssemblyAngularVelocity = Vector3.zero
 end
 
 function AntiFly.Whitelist(Player, Duration)
@@ -1893,8 +2125,7 @@ function AntiFly.Whitelist(Player, Duration)
 
 	local Until = os.clock() + (Duration or 1)
 
-	if not WhitelistUntil[Player]
-		or Until > WhitelistUntil[Player] then
+	if not WhitelistUntil[Player] or Until > WhitelistUntil[Player] then
 		WhitelistUntil[Player] = Until
 	end
 end
@@ -1916,14 +2147,20 @@ end
 
 local function SetupPlayer(Player)
 	local CurrentCharacter = nil
-
 	local SpawnTime = os.clock()
 
-	local LastPosition = nil
 	local LastGroundedPosition = nil
+	local LastGroundedTime = 0
+	local PlatformVelocityY = 0
 
 	local Airborne = false
 	local AirStart = 0
+
+	local ArcStart = 0
+	local ArcOriginY = 0
+	local ArcVelocityY = 0
+
+	local RiseTime = 0
 	local SuspiciousTime = 0
 
 	local HoldPosition = nil
@@ -1933,18 +2170,54 @@ local function SetupPlayer(Player)
 	local LastStrikeTime = 0
 	local LastStrikeDecay = os.clock()
 
-	local function ResetTracking(Position)
-		LastPosition = Position
-		LastGroundedPosition = Position
+	local LogTimes = {}
 
+	local function Log(Tag, ...)
+		if not Debug then
+			return
+		end
+
+		local Now = os.clock()
+
+		if LogTimes[Tag] and Now - LogTimes[Tag] < 0.5 then
+			return
+		end
+
+		LogTimes[Tag] = Now
+
+		warn("[Vanta AntiFly] " .. Player.Name .. ": " .. Tag, ...)
+	end
+
+	local function ResetAir()
 		Airborne = false
 		AirStart = 0
+		RiseTime = 0
 		SuspiciousTime = 0
+	end
+
+	local function ResetTracking(Position)
+		LastGroundedPosition = Position
+		LastGroundedTime = os.clock()
+		PlatformVelocityY = 0
+
+		ResetAir()
 
 		HoldPosition = nil
 		HoldUntil = 0
-
 		LastStrikeDecay = os.clock()
+	end
+
+	local function DecayStrikes(Now)
+		if Strikes > 0 and Now - LastStrikeDecay >= StrikeDecayTime then
+			Strikes -= 1
+			LastStrikeDecay = Now
+		end
+	end
+
+	local function AnchorArc(Time, Y, VelocityY)
+		ArcStart = Time
+		ArcOriginY = Y
+		ArcVelocityY = VelocityY
 	end
 
 	local function OnCharacterAdded(Character)
@@ -1986,6 +2259,7 @@ local function SetupPlayer(Player)
 		end
 
 		if IsWhitelisted(Player) then
+			Log("whitelisted, skipping")
 			ResetTracking(RootPart.Position)
 			return
 		end
@@ -1993,23 +2267,15 @@ local function SetupPlayer(Player)
 		local State = Humanoid:GetState()
 
 		if HardExempt[State] then
+			Log("exempt state, skipping", State.Name)
 			ResetTracking(RootPart.Position)
-			return
-		end
-
-		if SoftExempt[State] then
-			LastPosition = RootPart.Position
-			LastGroundedPosition = RootPart.Position
-			Airborne = false
-			AirStart = 0
-			SuspiciousTime = 0
 			return
 		end
 
 		local CurrentPosition = RootPart.Position
 		local VelocityY = RootPart.AssemblyLinearVelocity.Y
 
-		if not LastPosition then
+		if not LastGroundedPosition then
 			ResetTracking(CurrentPosition)
 			return
 		end
@@ -2018,130 +2284,136 @@ local function SetupPlayer(Player)
 			if Now >= HoldUntil then
 				HoldPosition = nil
 			elseif (CurrentPosition - HoldPosition).Magnitude > RubberbandRadius then
-				RootPart.CFrame =
-					CFrame.new(HoldPosition)
-					* RootPart.CFrame.Rotation
+				Snap(RootPart, HoldPosition)
 
-				RootPart.AssemblyLinearVelocity = Vector3.zero
-				RootPart.AssemblyAngularVelocity = Vector3.zero
-
-				LastPosition = HoldPosition
 				LastGroundedPosition = HoldPosition
+				LastGroundedTime = Now
+				ResetAir()
 
-				Airborne = false
-				AirStart = 0
-				SuspiciousTime = 0
-
+				Log("hold snap")
 				return
 			end
 		end
 
-		local GroundInfo = GetGroundInfo(
+		if Player:GetNetworkPing() > MaxPing then
+			Log("high ping, skipping")
+
+			if Airborne then
+				AnchorArc(Now, CurrentPosition.Y, VelocityY)
+				SuspiciousTime = 0
+			end
+
+			return
+		end
+
+		local Ground = GetGroundInfo(
 			Character,
 			RootPart,
 			Humanoid,
 			GroundCheckDistance
 		)
 
-		local Grounded = false
-
-		if GroundInfo then
-			Grounded = GroundInfo.Height <= 3.5
-		end
+		local Grounded = Ground ~= nil and Ground.Height <= GroundTolerance
 
 		if Grounded then
-			LastGroundedPosition = GroundInfo.Position
-			LastPosition = CurrentPosition
+			LastGroundedPosition = Ground.Position + Vector3.new(0, 0.25, 0)
+			LastGroundedTime = Now
+			PlatformVelocityY = math.max(0, Ground.Result.Instance.AssemblyLinearVelocity.Y)
 
-			Airborne = false
-			AirStart = 0
+			ResetAir()
+			DecayStrikes(Now)
+
+			return
+		end
+
+		local Soft = SoftExempt[State] == true
+		local Gravity = Workspace.Gravity
+		local MaxJumpVelocity = GetMaxJumpVelocity(Humanoid) + PlatformVelocityY
+
+		if not Airborne then
+			Airborne = true
+			AirStart = Now
+			RiseTime = 0
 			SuspiciousTime = 0
 
-			if Strikes > 0
-				and Now - LastStrikeDecay >= StrikeDecayTime then
-				Strikes -= 1
-				LastStrikeDecay = Now
+			if Soft then
+				AnchorArc(Now, CurrentPosition.Y, VelocityY)
+			else
+
+				AnchorArc(LastGroundedTime, LastGroundedPosition.Y, MaxJumpVelocity)
 			end
 
 			return
 		end
 
-		if not Airborne then
-			Airborne = true
-			AirStart = Now
-			SuspiciousTime = 0
-			LastPosition = CurrentPosition
-			return
+		if Soft then
+			AnchorArc(Now, CurrentPosition.Y, VelocityY)
 		end
 
-		local AirTime = Now - AirStart
+		local Reason = nil
 
-		local Hovering = false
-		local ArtificialLift = false
+		if not Soft then
+			local T = Now - ArcStart
+			local ExpectedY = ArcOriginY + ArcVelocityY * T - 0.5 * Gravity * T * T
+			local Excess = CurrentPosition.Y - ExpectedY
 
-		if AirTime >= MaxAirTime then
-			local FarGround = GetGroundInfo(
-				Character,
-				RootPart,
-				Humanoid,
-				GroundCheckDistance * 2
-			)
-
-			local HeightAboveGround =
-				FarGround and FarGround.Height or nil
-
-			Hovering =
-				HeightAboveGround ~= nil
-				and HeightAboveGround >= MinHoverHeight
-				and math.abs(VelocityY) <= HoverVerticalSpeed
-
-			ArtificialLift =
-				VelocityY >= SuspiciousUpwardVelocity
+			if Excess > ArcTolerance then
+				Reason = string.format("above jump arc by %.1f studs", Excess)
+			end
 		end
 
-		if Hovering or ArtificialLift then
-			SuspiciousTime += DeltaTime
-		elseif VelocityY < -HoverVerticalSpeed then
-			SuspiciousTime = math.max(
-				0,
-				SuspiciousTime - DeltaTime * 2
-			)
+		if VelocityY > RiseVelocity then
+			RiseTime += DeltaTime
 		else
-			SuspiciousTime = math.max(
-				0,
-				SuspiciousTime - DeltaTime * 0.5
-			)
+			RiseTime = math.max(0, RiseTime - DeltaTime)
+		end
+
+		local AllowedRise = Soft and SoftRiseTime or (MaxJumpVelocity / Gravity + RiseGrace)
+
+		if not Reason and RiseTime > AllowedRise then
+			Reason = string.format("rising for %.2fs", RiseTime)
+		end
+
+		if not Reason
+			and Now - AirStart >= HoverTime
+			and math.abs(VelocityY) <= HoverVerticalSpeed then
+
+			local Far = GetGroundInfo(Character, RootPart, Humanoid, FarCheckDistance)
+
+			if not Far or Far.Height >= MinHoverHeight then
+				Reason = "hovering"
+			end
+		end
+
+		if not Reason and State == Enum.HumanoidStateType.Flying then
+			Reason = "flying state"
+		end
+
+		if Reason then
+			SuspiciousTime += DeltaTime
+			Log("suspicious", Reason)
+		else
+			SuspiciousTime = math.max(0, SuspiciousTime - DeltaTime)
+			DecayStrikes(Now)
 		end
 
 		if SuspiciousTime < ConfirmationTime then
-			LastPosition = CurrentPosition
 			return
 		end
 
-		if LastGroundedPosition then
-			RootPart.CFrame =
-				CFrame.new(LastGroundedPosition)
-				* RootPart.CFrame.Rotation
+		Snap(RootPart, LastGroundedPosition)
 
-			RootPart.AssemblyLinearVelocity = Vector3.zero
-			RootPart.AssemblyAngularVelocity = Vector3.zero
+		HoldPosition = LastGroundedPosition
+		HoldUntil = Now + RubberbandHold
 
-			HoldPosition = LastGroundedPosition
-			HoldUntil = Now + RubberbandHold
+		ResetAir()
 
-			LastPosition = LastGroundedPosition
-		else
-			LastPosition = CurrentPosition
-		end
-
-		Airborne = false
-		AirStart = 0
-		SuspiciousTime = 0
+		Log("rubberband", Reason)
 
 		if Now - LastStrikeTime >= StrikeCooldown then
 			LastStrikeTime = Now
-			Strikes += 1
 			LastStrikeDecay = Now
+			Strikes += 1
 
 			if Strikes >= StrikeLimit then
 				Kick:Init(Player, "AntiFly")
@@ -2178,7 +2450,7 @@ return AntiFly]]></ProtectedString>
 					<SharedString name="Tags">yuZpQdnvvUBOTYh1jqZ2cA==</SharedString>
 				</Properties>
 			</Item>
-			<Item class="ModuleScript" referent="RBX455D0BA36D644AC7A043005F03445C5C">
+			<Item class="ModuleScript" referent="RBX3B1895FA7E174840989DE9AC38551508">
 				<Properties>
 					<Content name="LinkedSource"><null></null></Content>
 					<ProtectedString name="Source"><![CDATA[local Kick = {}
@@ -2287,7 +2559,7 @@ return Kick]]></ProtectedString>
 					<SharedString name="Tags">yuZpQdnvvUBOTYh1jqZ2cA==</SharedString>
 				</Properties>
 			</Item>
-			<Item class="ModuleScript" referent="RBX5B81CEE3D3CC49D69A9B81509E7CCA2C">
+			<Item class="ModuleScript" referent="RBX36EDF2CF7F2E4A159AF76A2ACE2BD069">
 				<Properties>
 					<Content name="LinkedSource"><null></null></Content>
 					<ProtectedString name="Source"><![CDATA[local Notify = {}
@@ -2304,7 +2576,8 @@ if not Remote then
 	Remote.Parent = ReplicatedStorage
 end
 
-local DEFAULT_TITLE = "Vanta Detection"
+local DETECTION_TITLE = "Vanta Detection"
+local NOTIFICATION_TITLE = "Vanta"
 local DEFAULT_DURATION = 4
 local DEFAULT_SEVERITY = "warn"
 local DEDUPE_WINDOW = 1
@@ -2321,12 +2594,42 @@ Players.PlayerRemoving:Connect(function(Player)
 	LastSent[Player] = nil
 end)
 
-function Notify:Send(Player, Detection, Duration, Severity)
-	if not Player or not Player:IsA("Player") then
+--[[
+	Notify:Send(Player, Detection, Duration, Severity, Message)
+
+	Detection notification (shows "Vanta Detection" + the detection name):
+		Notify:Send(Player, "AntiNoclip")
+		Notify:Send(Player, "AntiFly", 5, "danger")
+
+	Normal notification (Detection is nil or false, text goes in Message):
+		Notify:Send(Player, false, 5, "info", "Welcome to the game!")
+		Notify:Send(Player, nil, nil, nil, "Something happened")
+
+	Duration: seconds, clamped 1-10 (default 4)
+	Severity: "info" | "warn" | "danger" (default "warn")
+--]]
+
+function Notify:Send(Player, Detection, Duration, Severity, Message)
+	if typeof(Player) ~= "Instance" or not Player:IsA("Player") then
 		return
 	end
 
-	if typeof(Detection) ~= "string" or Detection == "" then
+	local Title
+	local Text
+
+	if typeof(Detection) == "string" and Detection ~= "" then
+		-- detection notification
+		Title = DETECTION_TITLE
+		Text = Detection
+	elseif not Detection then
+		-- normal notification (Detection skipped / nil / false)
+		if typeof(Message) ~= "string" or Message == "" then
+			return
+		end
+
+		Title = NOTIFICATION_TITLE
+		Text = Message
+	else
 		return
 	end
 
@@ -2345,19 +2648,19 @@ function Notify:Send(Player, Detection, Duration, Severity)
 		LastSent[Player] = PlayerLog
 	end
 
-	local Last = PlayerLog[Detection]
+	local Last = PlayerLog[Text]
 
 	if Last and Now - Last < DEDUPE_WINDOW then
 		return
 	end
 
-	PlayerLog[Detection] = Now
+	PlayerLog[Text] = Now
 
 	if Remote and Remote.Parent then
 		Remote:FireClient(
 			Player,
-			DEFAULT_TITLE,
-			Detection,
+			Title,
+			Text,
 			Duration,
 			Severity
 		)
@@ -2374,7 +2677,7 @@ return Notify]]></ProtectedString>
 					<SharedString name="Tags">yuZpQdnvvUBOTYh1jqZ2cA==</SharedString>
 				</Properties>
 			</Item>
-			<Item class="ModuleScript" referent="RBXAEC5EBE68AA54879BD650987DFC7545C">
+			<Item class="ModuleScript" referent="RBX665FF5D0DA9948EF8752F65EA471FE89">
 				<Properties>
 					<Content name="LinkedSource"><null></null></Content>
 					<ProtectedString name="Source"><![CDATA[local AntiFling = {}
@@ -2386,7 +2689,7 @@ local Vanta = script.Parent.Parent
 local Settings = require(Vanta)
 local Config = Settings.AntiFling
 
-if not Config.Enabled then
+if Config ~= true then
 	return AntiFling
 end
 
@@ -2517,7 +2820,7 @@ return AntiFling]]></ProtectedString>
 				</Properties>
 			</Item>
 		</Item>
-		<Item class="Folder" referent="RBXBAB36DA730754D2A839A9D3E5D7881E3">
+		<Item class="Folder" referent="RBX2BA8C26668A34A5080C039105C13BAEB">
 			<Properties>
 				<Color3 name="IconTint">
 					<R>0</R>
@@ -2531,7 +2834,7 @@ return AntiFling]]></ProtectedString>
 				<int64 name="SourceAssetId">-1</int64>
 				<SharedString name="Tags">yuZpQdnvvUBOTYh1jqZ2cA==</SharedString>
 			</Properties>
-			<Item class="LocalScript" referent="RBX4014455223B14F22B770171CAFAD1A75">
+			<Item class="LocalScript" referent="RBX7B9729BF203B49E3892DFE6F7F1E9562">
 				<Properties>
 					<ProtectedString name="Source"><![CDATA[if not game:IsLoaded() then
 	game.Loaded:Wait()
@@ -2545,26 +2848,24 @@ local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 local PlayerScripts = LocalPlayer:WaitForChild("PlayerScripts")
 local Remote = ReplicatedStorage:WaitForChild("VNT_ClientHB")
 
-local WatchedObjects = {}
-
-local RemoteClasses = {
-	RemoteEvent = true,
-	RemoteFunction = true,
-	UnreliableRemoteEvent = true,
-}
-
 local CurrentSequence
 local CurrentChallenge
 local Sending = false
 
+local WatchedObjects = {}
+
 local function Report(Action, Object)
 	if Remote and Remote.Parent then
-		Remote:FireServer(Action, Object and Object.Name)
+		Remote:FireServer(
+			Action,
+			Object and Object.Name
+		)
 	end
 end
 
 local function WatchScript(Object)
-	if not (Object:IsA("LocalScript") or Object:IsA("ModuleScript")) then
+	if not Object:IsA("LocalScript")
+		and not Object:IsA("ModuleScript") then
 		return
 	end
 
@@ -2572,7 +2873,7 @@ local function WatchScript(Object)
 		return
 	end
 
-	WatchedObjects[Object] = "Script"
+	WatchedObjects[Object] = true
 
 	Object.AncestryChanged:Connect(function(_, Parent)
 		if not Parent then
@@ -2582,7 +2883,9 @@ local function WatchScript(Object)
 end
 
 local function WatchRemote(Object)
-	if not RemoteClasses[Object.ClassName] then
+	if not Object:IsA("RemoteEvent")
+		and not Object:IsA("UnreliableRemoteEvent")
+		and not Object:IsA("RemoteFunction") then
 		return
 	end
 
@@ -2590,11 +2893,11 @@ local function WatchRemote(Object)
 		return
 	end
 
-	WatchedObjects[Object] = "Remote"
+	WatchedObjects[Object] = true
 
 	Object.AncestryChanged:Connect(function(_, Parent)
 		if not Parent then
-			Report("RemoteTampered", Object)
+			Report("RemoteDeleted", Object)
 		end
 	end)
 end
@@ -2624,7 +2927,7 @@ task.spawn(function()
 
 	local Connection
 
-	Connection = Gui.AncestryChanged:Connect(function()
+	Connection = Gui.AncestryChanged:Connect(function(_, Parent)
 		if not Gui:IsDescendantOf(PlayerGui) then
 			Connection:Disconnect()
 			Report("GuiDeleted", Gui)
@@ -2707,7 +3010,7 @@ end)]]></ProtectedString>
 					<SharedString name="Tags">yuZpQdnvvUBOTYh1jqZ2cA==</SharedString>
 				</Properties>
 			</Item>
-			<Item class="LocalScript" referent="RBX84617081992A498BB659AAC3E54CAD51">
+			<Item class="LocalScript" referent="RBX716D32E0F08A4645B9B1780D78310BCB">
 				<Properties>
 					<ProtectedString name="Source"><![CDATA[local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
