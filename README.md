@@ -15,7 +15,7 @@ Vanta is a free, server-side Roblox anticheat.
 
 ## Version
 
-Newest Version: <!-- VERSION -->v1.0.2<!-- VERSION -->
+Newest Version: <!-- VERSION -->v1.0.3<!-- VERSION -->
 
 ## Features
 
